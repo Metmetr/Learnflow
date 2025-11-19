@@ -1,4 +1,6 @@
-import { Link } from "wouter";
+import { useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import PostCard from "@/components/PostCard";
@@ -12,6 +14,15 @@ import mathImage from "@assets/generated_images/Mathematics_educational_illustra
 import bioImage from "@assets/generated_images/Biology_scientific_illustration_e921027e.png";
 
 export default function Landing() {
+  const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    // Only redirect after auth check completes and user is confirmed logged in
+    if (!isLoading && user) {
+      setLocation("/feed");
+    }
+  }, [user, isLoading, setLocation]);
   const featuredPosts = [
     {
       id: "1",
