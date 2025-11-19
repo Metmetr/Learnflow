@@ -21,7 +21,7 @@ export interface Post {
     avatar?: string;
     verified: boolean;
   };
-  createdAt: Date;
+  createdAt: string;
   verificationStatus: "pending" | "verified" | "rejected";
   likes: number;
   comments: number;
@@ -90,7 +90,7 @@ export default function PostCard({ post, onLike, onBookmark }: PostCardProps) {
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span data-testid={`text-time-${post.id}`}>
-                {formatDistanceToNow(post.createdAt, { addSuffix: true, locale: tr })}
+                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: tr })}
               </span>
               {post.topics.slice(0, 2).map((topic) => (
                 <Badge key={topic} variant="secondary" className="text-xs">

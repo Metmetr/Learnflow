@@ -133,10 +133,7 @@ export default function Feed() {
                   .map((post: any) => (
                     <PostCard
                       key={post.id}
-                      post={{
-                        ...post,
-                        createdAt: new Date(post.createdAt),
-                      }}
+                      post={post}
                     />
                   ))
               )}
