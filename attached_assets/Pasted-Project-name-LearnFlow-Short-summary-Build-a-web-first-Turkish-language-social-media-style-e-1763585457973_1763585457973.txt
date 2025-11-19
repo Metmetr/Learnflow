@@ -1,0 +1,144 @@
+Project name: LearnFlow
+
+Short summary:
+Build a web-first, Turkish-language, social-media-style educational platform called "LearnFlow". The UI should feel like Facebook/Instagram (top nav, center feed, sidebars), but be distraction-free and focused on verified, educational content. The system must support:
+- Google one-click OAuth sign-in,
+- SheerID verification for educators/academics so verified teachers can upload content,
+- n8n webhooks for automated AI content creation,
+- a mock ML ranker for personalized feed ordering,
+- admin moderation, comments, likes, bookmarks,
+- a single-command startup on Replit (SQLite fallback) and clear README in English & Turkish.
+
+Required deliverables:
+- Full repo scaffold runnable on Replit with one command (e.g., `npm run dev` or .replit run entry).
+- Frontend (React/Next.js + Tailwind), Backend (Node.js + Express or Next API routes).
+- DB schema + seed script (SQLite default, PostgreSQL optional with DATABASE_URL).
+- Google OAuth ready (env vars) + local mock login mode.
+- SheerID integration flow + secure admin approval for educator role.
+- n8n endpoints for automatic content creation (with API-key protection).
+- `/api/ml/rank` mock ranker used by feed endpoint.
+- Admin dashboard pages: moderation queue, verify content, ML demo, SheerID verification logs.
+- README: setup, env vars, n8n setup, SheerID setup, run instructions, acceptance checklist.
+- Basic tests (jest + supertest) for auth, feed ordering, n8n endpoints, moderation.
+
+Tech stack (preferred):
+- Frontend: Next.js (or React SPA) + Tailwind CSS, functional components + hooks.
+- Backend: Node.js + Express (or Next.js API routes).
+- DB: SQLite for Replit, PostgreSQL optional.
+- Auth: Google OAuth2 + JWT; fallback mock login for local dev.
+- SheerID: server-side verification via their API (instructions and secure env var usage).
+- n8n: webhook endpoints protected by API key header `x-n8n-key`.
+
+Functional requirements (detailed):
+
+1) UI / UX (Turkish)
+- Entire UI and seeded content must be in Turkish.
+- Layout: top navbar (logo, search, notifications, profile), left nav (Home, Explore, Topics), center feed (posts), right sidebar (recommended topics, verified educators).
+- Feed cards (social style): show title, excerpt/media, author name & avatar, created_at, verification badge (verified/pending/rejected), like count, comment count, share, save.
+- Reader mode on content detail: distraction-free, large typography.
+- Thematic decorative icons: map topic → small SVG icons placed near card edges (History → books/figures; Math → geometry/equations; Programming → code brackets; Biology → DNA/leaf; etc.) Implement a simple mapping and show icons.
+- Mobile-first responsive design.
+
+2) Authentication & roles
+- Implement Google OAuth2 sign-in (env vars: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, OAUTH_CALLBACK_URL).
+- Provide local mock login (e.g., `/api/auth/mock-login`) if Google keys absent.
+- JWT token for API calls; protect endpoints.
+- Roles: `user`, `educator` (verified), `admin`.
+- Educator role is granted only after successful SheerID verification (see 4).
+
+3) SheerID integration
+- Implement SheerID server-side verification flow:
+  - Add endpoint `/api/sheerid/start` that initiates SheerID verification (redirect or API call depending on SheerID mode).
+  - Add endpoint `/api/sheerid/webhook` to receive SheerID verification results (secure with a SheerID webhook secret).
+  - When SheerID returns positive verification for teaching/academic status, create a record and set user.role = `educator` (or flag pending admin approval based on config).
+  - Store verification metadata: sheerid_verification_id, verified_at, verification_data (redact sensitive pieces), verification_status.
+- Env vars: SHEERID_CLIENT_ID, SHEERID_CLIENT_SECRET, SHEERID_WEBHOOK_SECRET.
+- Admin UI shows SheerID verification logs and allows manual override (approve/revoke educator role).
+- Document privacy handling (KVKK/GDPR): store minimal data, redact PII, provide delete endpoint.
+
+4) Content management & n8n auto-content
+- Content model fields: id, title, body, type (article/video/podcast), media_url, topics[], source, author_id, created_at, verification_status (pending/verified/rejected), verified_by, verification_date, confidence_score, popularity.
+- Only `educator` (SheerID-verified) users or `admin` should be allowed to create content through the app UI.
+- Provide n8n webhook endpoints for automated content creation:
+  - `POST /api/n8n/content/create` — payload: `{ title, summary, body, topic, media_url, source: 'n8n', tags }`
+    - Security: require header `x-n8n-key: <N8N_API_KEY>`.
+    - Action: create content with `verification_status = pending` and `author_id = system_n8n_user` (system user), store incoming payload metadata.
+  - `POST /api/n8n/content/update` — update content by id (protected).
+  - `POST /api/n8n/notify` — optional notifications from n8n.
+- README must include example n8n flow (YouTube transcript → AI summary → classify topic → post to LearnFlow webhook).
+- Rate-limit n8n endpoints or require signature to prevent abuse.
+
+5) Feed personalization & ML placeholder
+- Implement `POST /api/ml/rank`:
+  - Accepts `{ user_id?, user_topics:[], items: [{id, created_at, verified, topics, popularity}] }`
+  - Returns items with `score` using a clear weighted formula: e.g., `score = (verified?2:0) + topic_match*1.5 + normalized_popularity*1 - age_days*0.01`.
+  - The feed endpoint `/api/feed` for signed-in users calls `/api/ml/rank` to order items.
+  - Include an Admin → ML Demo page that shows items and breakdown of score components per item.
+  - Add TODO comments where a real ML model can be swapped in (explain deployment options: microservice FastAPI with sklearn/pytorch).
+
+6) Comments, likes, bookmarks, reports
+- Comments: create/read/delete (author or admin can delete).
+- Likes: toggle like/unlike; maintain like counts.
+- Bookmarks: save/unsave posts for each user.
+- Reports: users can report content with a reason; admin can view and act.
+
+7) Admin dashboard
+- Moderation queue: list pending content (from educators or n8n) with approve/reject buttons.
+- SheerID verifications: list, search, manual override.
+- Reports list and user management.
+- ML demo and re-rank trigger.
+
+8) Seeding & Localization
+- Seed DB with 20+ Turkish content items across topics: Matematik, Fizik, Programlama, Tarih, Biyoloji, Kişisel Gelişim.
+- Seed at least one admin user and one system n8n user.
+- Provide a simple i18n JSON file (tr.json) and ensure UI pulls strings from it (even if only TR exists).
+
+9) Security & compliance
+- Consent modal on first visit; record consent in DB.
+- Delete-my-data endpoint for account deletion/GDPR/KVKK compliance.
+- Sanitize all user input; parameterized DB queries.
+- Store secrets in env vars and instruct Replit secret setup in README.
+- Protect webhook endpoints with API key or HMAC signature.
+- Mark production TODOs (stronger rate limiting, audit logs, stricter password policy).
+
+10) Dev / Replit requirements
+- Single-command run: `.replit` or `npm run dev` must start app.
+- Default DB: SQLite for Replit; if `DATABASE_URL` set, use PostgreSQL.
+- Provide Dockerfile (optional) and instructions to run locally.
+- README in both Turkish & English: setup, environment variables (Google, SheerID, N8N key), seeding, how to run tests.
+- Provide example curl commands or Postman collection for:
+  - Google OAuth flow (how to set up)
+  - SheerID start + webhook
+  - n8n webhook example
+  - `/api/ml/rank` example
+
+Acceptance criteria:
+- Replit project boots with one command and serves a Turkish UI.
+- Google OAuth works when configured; mock login works otherwise.
+- SheerID flow is implemented server-side; verified educators become `educator` role (or flagged for admin approval).
+- n8n endpoints accept content and create `pending` posts.
+- Signed-in educator can manually create content; normal users cannot create content via UI.
+- Feed ordering for signed-in users uses the mock ranker.
+- Admin can approve/reject content and manage SheerID logs.
+- Thematic icons appear around posts by topic.
+- README documents how to replace the mock ML with a production model and how to configure SheerID & n8n.
+
+Environment variables to include in README (.env):
+- DATABASE_URL (optional)
+- JWT_SECRET
+- GOOGLE_CLIENT_ID
+- GOOGLE_CLIENT_SECRET
+- OAUTH_CALLBACK_URL
+- SHEERID_CLIENT_ID
+- SHEERID_CLIENT_SECRET
+- SHEERID_WEBHOOK_SECRET
+- N8N_API_KEY
+
+Notes to implementer:
+- Keep the UI familiar (social media layout) but clean and minimalist.
+- Keep SheerID PII handling minimal; store only verification ID + status + non-sensitive metadata. Add redaction note.
+- Provide clear TODOs next to security-sensitive code.
+- Use feature flags for: `SHEERID_ENABLED`, `N8N_ENABLED`, `MOCK_AUTH`.
+
+Please scaffold a runnable LearnFlow prototype on Replit according to the above. Seed Turkish content, create UI pages (Landing, Feed, Content Detail, Profile, Admin), implement endpoints for n8n, SheerID, ML mock, and produce a README (TR + EN) with setup and n8n flow example.
+
