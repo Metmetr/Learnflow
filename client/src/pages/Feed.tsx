@@ -16,7 +16,7 @@ export default function Feed() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
 
   const { data: posts = [], isLoading } = useQuery({
-    queryKey: ["/feed/personalized"],
+    queryKey: ["/api/feed/personalized"],
     enabled: !!user,
   });
 
@@ -133,21 +133,10 @@ export default function Feed() {
                   .map((post: any) => (
                     <PostCard
                       key={post.id}
-                      id={post.id}
-                      title={post.title}
-                      excerpt={post.excerpt}
-                      mediaUrl={post.mediaUrl}
-                      topics={post.topics}
-                      author={{
-                        id: post.author.id,
-                        name: post.author.name,
-                        avatar: post.author.avatar,
-                        verified: post.author.verified,
+                      post={{
+                        ...post,
+                        createdAt: new Date(post.createdAt),
                       }}
-                      createdAt={new Date(post.createdAt)}
-                      verificationStatus={post.verificationStatus}
-                      likes={post.likes}
-                      comments={post.comments}
                     />
                   ))
               )}

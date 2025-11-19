@@ -30,6 +30,14 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     password: "",
   });
 
+  // Reset loading state when dialog closes
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setIsLoading(false);
+    }
+    onOpenChange(newOpen);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -93,7 +101,7 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>LearnFlow'a Hoş Geldiniz</DialogTitle>
