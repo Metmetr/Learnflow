@@ -3,7 +3,7 @@ import { Strategy, type VerifyFunction } from "openid-client/passport";
 
 import passport from "passport";
 import session from "express-session";
-import type { Express, RequestHandler } from "express";
+import type { Express, RequestHandler, Request, Response, NextFunction } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
@@ -120,7 +120,48 @@ export async function setupAuth(app: Express) {
   };
 
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
-  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+  passport.deserializeUser(async (sessionUser: any, cb) => {
+    try {
+      // Safety check for legacy sessions or missing claims
+      // Return null (not error) to gracefully handle invalid sessions
+      if (!sessionUser?.claims?.sub) {
+        console.warn("[AUTH] Invalid session data - clearing session");
+        return cb(null, false);
+      }
+
+      // Fetch the full user record from database
+      const userId = sessionUser.claims.sub;
+      const dbUser = await storage.getUser(userId);
+      
+      if (!dbUser) {
+        console.warn("[AUTH] User not found in database - clearing session");
+        return cb(null, false);
+      }
+
+      // Merge session data with database user
+      // This makes req.user have all expected fields (id, role, verified, etc.)
+      // req.user shape: { ...sessionData (claims, tokens), ...dbUser (id, role, verified, etc.) }
+      const user = {
+        ...sessionUser,
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.name,
+        role: dbUser.role,
+        verified: dbUser.verified,
+        firstName: dbUser.firstName,
+        lastName: dbUser.lastName,
+        profileImageUrl: dbUser.profileImageUrl,
+        avatar: dbUser.avatar,
+        specialty: dbUser.specialty,
+        bio: dbUser.bio,
+      };
+      
+      cb(null, user);
+    } catch (error) {
+      console.error("[AUTH] Error in deserializeUser:", error);
+      cb(null, false);
+    }
+  });
 
   app.get("/api/login", (req, res, next) => {
     const strategyName = ensureStrategy(req);
@@ -152,6 +193,10 @@ export async function setupAuth(app: Express) {
   });
 }
 
+export interface AuthRequest extends Request {
+  user?: any;
+}
+
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
@@ -180,3 +225,46 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return;
   }
 };
+
+export const optionalAuth: RequestHandler = async (req, res, next) => {
+  const user = req.user as any;
+
+  if (!req.isAuthenticated() || !user?.expires_at) {
+    return next();
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  if (now <= user.expires_at) {
+    return next();
+  }
+
+  const refreshToken = user.refresh_token;
+  if (!refreshToken) {
+    return next();
+  }
+
+  try {
+    const config = await getOidcConfig();
+    const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
+    updateUserSession(user, tokenResponse);
+  } catch {
+    // Ignore refresh errors for optional auth
+  }
+
+  return next();
+};
+
+export function requireRole(...roles: Array<"user" | "educator" | "admin">) {
+  return async (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // req.user already has role from deserializeUser
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    next();
+  };
+}

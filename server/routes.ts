@@ -2,7 +2,6 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { storage } from "./storage";
-import authRoutes from "./routes/auth";
 import contentRoutes from "./routes/content";
 import socialRoutes from "./routes/social";
 import feedRoutes from "./routes/feed";
@@ -27,7 +26,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.use("/api/auth", authRoutes);
   app.use("/api/content", contentRoutes);
   app.use("/api/social", socialRoutes);
   app.use("/api/feed", feedRoutes);

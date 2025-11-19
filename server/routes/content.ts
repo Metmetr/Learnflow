@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { db } from "../db";
 import { content, users } from "@shared/schema";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
-import { authenticateToken, optionalAuth, requireRole, type AuthRequest } from "../auth";
+import { isAuthenticated as authenticateToken, optionalAuth, requireRole, type AuthRequest } from "../replitAuth";
 import { insertContentSchema } from "@shared/schema";
 import { z } from "zod";
 

@@ -1,39 +1,20 @@
 // API client for LearnFlow backend
 const API_BASE = "/api";
 
-// Get auth token from localStorage
-function getAuthToken(): string | null {
-  return localStorage.getItem("auth_token");
-}
-
-// Save auth token
-export function saveAuthToken(token: string) {
-  localStorage.setItem("auth_token", token);
-}
-
-// Remove auth token
-export function removeAuthToken() {
-  localStorage.removeItem("auth_token");
-}
-
 // API request helper
+// Note: Authentication is handled via cookies (Replit Auth sessions)
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = getAuthToken();
-
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) || {}),
   };
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
+    credentials: "include",
     headers,
   });
 
@@ -44,28 +25,6 @@ export async function apiRequest<T>(
 
   return response.json();
 }
-
-// Auth API
-export const authAPI = {
-  login: (email: string, password: string) =>
-    apiRequest<{ user: any; token: string }>("/auth/mock-login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
-
-  signup: (name: string, email: string, password: string) =>
-    apiRequest<{ user: any; token: string }>("/auth/signup", {
-      method: "POST",
-      body: JSON.stringify({ name, email, password }),
-    }),
-
-  logout: () =>
-    apiRequest("/auth/logout", {
-      method: "POST",
-    }),
-
-  getMe: () => apiRequest<any>("/auth/me"),
-};
 
 // Content API
 export const contentAPI = {
