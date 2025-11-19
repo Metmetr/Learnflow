@@ -11,6 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/lib/auth";
+import LoginDialog from "@/components/LoginDialog";
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -18,9 +20,10 @@ interface NavbarProps {
 }
 
 export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) {
+  const { user, logout } = useAuth();
   const [searchValue, setSearchValue] = useState("");
   const [notificationCount] = useState(3);
-  const [isLoggedIn] = useState(true);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -57,7 +60,7 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
         )}
 
         <div className="ml-auto flex items-center gap-2">
-          {isLoggedIn ? (
+          {user ? (
             <>
               <Button
                 variant="ghost"
@@ -88,6 +91,16 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  <div className="flex flex-col space-y-1 p-2">
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    {user.verified && (
+                      <Badge variant="secondary" className="w-fit text-xs">
+                        {user.role === "educator" ? "Doğrulanmış Eğitimci" : user.role === "admin" ? "Yönetici" : "Kullanıcı"}
+                      </Badge>
+                    )}
+                  </div>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/profile" data-testid="link-profile">
                       Profilim
@@ -98,23 +111,34 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
                       Kaydedilenler
                     </Link>
                   </DropdownMenuItem>
+                  {user.role === "admin" && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" data-testid="link-admin">
+                        Admin Paneli
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link href="/settings" data-testid="link-settings">
                       Ayarlar
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem data-testid="button-logout">
+                  <DropdownMenuItem onClick={logout} data-testid="button-logout">
                     Çıkış Yap
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
-            <Button data-testid="button-login">Giriş Yap</Button>
+            <Button onClick={() => setShowLoginDialog(true)} data-testid="button-login">
+              Giriş Yap
+            </Button>
           )}
         </div>
       </div>
+
+      <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
     </nav>
   );
 }
