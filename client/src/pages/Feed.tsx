@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Home, Compass, Bookmark, PenSquare } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { feedAPI } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Feed() {
   const [location] = useLocation();

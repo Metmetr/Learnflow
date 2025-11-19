@@ -11,8 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/lib/auth";
-import LoginDialog from "@/components/LoginDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -20,10 +19,9 @@ interface NavbarProps {
 }
 
 export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [searchValue, setSearchValue] = useState("");
   const [notificationCount] = useState(3);
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -124,21 +122,21 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} data-testid="button-logout">
-                    Çıkış Yap
+                  <DropdownMenuItem asChild>
+                    <a href="/api/logout" data-testid="button-logout">
+                      Çıkış Yap
+                    </a>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
-            <Button onClick={() => setShowLoginDialog(true)} data-testid="button-login">
-              Giriş Yap
+            <Button asChild data-testid="button-login">
+              <a href="/api/login">Giriş Yap</a>
             </Button>
           )}
         </div>
       </div>
-
-      <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
     </nav>
   );
 }

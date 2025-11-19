@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import { storage } from "./storage";
 import authRoutes from "./routes/auth";
 import contentRoutes from "./routes/content";
 import socialRoutes from "./routes/social";
@@ -9,7 +11,22 @@ import sheeridRoutes from "./routes/sheerid";
 import n8nRoutes from "./routes/n8n";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Register all API routes
+  await setupAuth(app);
+
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   app.use("/api/auth", authRoutes);
   app.use("/api/content", contentRoutes);
   app.use("/api/social", socialRoutes);
