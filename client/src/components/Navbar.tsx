@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Search, Bell, Menu, User } from "lucide-react";
+import { Search, Menu, User } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import NotificationsPopover from "@/components/NotificationsPopover";
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -21,7 +23,13 @@ interface NavbarProps {
 export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) {
   const { user } = useAuth();
   const [searchValue, setSearchValue] = useState("");
-  const [notificationCount] = useState(3);
+  
+  const { data: unreadData } = useQuery<{ count: number }>({
+    queryKey: ["/api/notifications/unread-count"],
+    enabled: !!user,
+  });
+  
+  const notificationCount = unreadData?.count || 0;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -60,22 +68,7 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
         <div className="ml-auto flex items-center gap-2">
           {user ? (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                data-testid="button-notifications"
-              >
-                <Bell className="h-5 w-5" />
-                {notificationCount > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="absolute -right-1 -top-1 h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs"
-                  >
-                    {notificationCount}
-                  </Badge>
-                )}
-              </Button>
+              <NotificationsPopover unreadCount={notificationCount} />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
