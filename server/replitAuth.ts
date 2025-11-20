@@ -173,9 +173,39 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/callback", (req, res, next) => {
     const strategyName = ensureStrategy(req);
-    passport.authenticate(strategyName, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
+    passport.authenticate(strategyName, (err: any, user: any, info: any) => {
+      if (err) {
+        console.error("[AUTH] Callback error:", err);
+        return next(err);
+      }
+      
+      if (!user) {
+        console.warn("[AUTH] No user returned from authentication");
+        return res.redirect("/api/login");
+      }
+      
+      // Explicitly log in the user and wait for session to be saved
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error("[AUTH] Login error:", loginErr);
+          return next(loginErr);
+        }
+        
+        // Explicitly save the session before redirecting
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("[AUTH] Session save error:", saveErr);
+            return next(saveErr);
+          }
+          
+          // Check if there's a return-to URL, otherwise default to /
+          const returnTo = (req.session as any).returnTo || "/";
+          delete (req.session as any).returnTo; // Clear it after using
+          
+          console.log("[AUTH] Session saved successfully, redirecting to", returnTo);
+          return res.redirect(returnTo);
+        });
+      });
     })(req, res, next);
   });
 

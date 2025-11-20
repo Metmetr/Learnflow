@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +18,10 @@ import { CheckCircle2, XCircle, Clock, Users, FileText, Shield, TrendingUp } fro
 import educatorImage from "@assets/generated_images/Turkish_female_educator_portrait_f68f89da.png";
 
 export default function AdminDashboard() {
+  const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // All hooks must be called before any conditional returns
   const [pendingContent] = useState([
     {
       id: "1",
@@ -53,6 +59,18 @@ export default function AdminDashboard() {
       submittedAt: new Date(Date.now() - 43200000),
     },
   ]);
+
+  useEffect(() => {
+    // Redirect non-admin users to home
+    if (!isLoading && (!user || (user as any).role !== "admin")) {
+      setLocation("/");
+    }
+  }, [user, isLoading, setLocation]);
+
+  // Show loading or nothing while checking auth
+  if (isLoading || !user || (user as any).role !== "admin") {
+    return null;
+  }
 
   const handleApprove = (id: string) => {
     console.log("Approved content:", id);
