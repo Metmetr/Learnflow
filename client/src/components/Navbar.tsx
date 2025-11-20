@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Search, Menu, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ interface NavbarProps {
 export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) {
   const { user } = useAuth();
   const [searchValue, setSearchValue] = useState("");
+  const [, setLocation] = useLocation();
   
   const { data: unreadData } = useQuery<{ count: number }>({
     queryKey: ["/api/notifications/unread-count"],
@@ -30,6 +31,12 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
   });
   
   const notificationCount = unreadData?.count || 0;
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchValue.trim()) {
+      setLocation(`/search?q=${encodeURIComponent(searchValue.trim())}`);
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -60,6 +67,7 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
               className="w-full pl-9"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={handleSearch}
               data-testid="input-search"
             />
           </div>
