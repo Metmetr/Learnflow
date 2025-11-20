@@ -8,6 +8,7 @@ import feedRoutes from "./routes/feed";
 import adminRoutes from "./routes/admin";
 import sheeridRoutes from "./routes/sheerid";
 import n8nRoutes from "./routes/n8n";
+import userRoutes from "./routes/user";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -32,6 +33,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/admin", adminRoutes);
   app.use("/api/sheerid", sheeridRoutes);
   app.use("/api/n8n", n8nRoutes);
+  app.use("/api/user", userRoutes);
 
   const httpServer = createServer(app);
 
