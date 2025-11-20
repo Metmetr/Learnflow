@@ -24,6 +24,13 @@ export const contentTypeEnum = pgEnum("content_type", [
   "video",
   "podcast",
 ]);
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "content_verified",
+  "content_rejected",
+  "comment_added",
+  "comment_reply",
+  "like_added",
+]);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -187,6 +194,31 @@ export const consents = pgTable("consents", {
   consentedAt: timestamp("consented_at").defaultNow().notNull(),
 });
 
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: notificationTypeEnum("type").notNull(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    contentId: varchar("content_id").references(() => content.id, {
+      onDelete: "cascade",
+    }),
+    commentId: varchar("comment_id").references(() => comments.id, {
+      onDelete: "cascade",
+    }),
+    read: boolean("read").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("notifications_user_idx").on(table.userId),
+    readIdx: index("notifications_read_idx").on(table.read),
+  })
+);
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -234,6 +266,11 @@ export const insertSheerIDVerificationSchema = createInsertSchema(
   verifiedAt: true,
 });
 
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Select Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -261,3 +298,6 @@ export type InsertSheerIDVerification = z.infer<
 
 export type Session = typeof sessions.$inferSelect;
 export type Consent = typeof consents.$inferSelect;
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
