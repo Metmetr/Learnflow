@@ -27,6 +27,7 @@ router.get("/", async (req: Request, res: Response) => {
         authorId: users.id,
         authorName: users.name,
         authorAvatar: users.avatar,
+        authorVerified: users.verified,
       })
       .from(content)
       .innerJoin(users, eq(content.authorId, users.id))

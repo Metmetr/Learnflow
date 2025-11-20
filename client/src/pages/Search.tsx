@@ -15,6 +15,7 @@ interface SearchResult {
   authorId: string;
   authorName: string;
   authorAvatar: string | null;
+  authorVerified: boolean;
 }
 
 export default function Search() {
@@ -94,7 +95,7 @@ export default function Search() {
                 id: result.authorId,
                 name: result.authorName,
                 avatar: result.authorAvatar || undefined,
-                verified: true,
+                verified: result.authorVerified,
               },
               createdAt: result.createdAt,
               verificationStatus: "verified" as const,

@@ -39,6 +39,8 @@ Preferred communication style: Simple, everyday language.
 - Comment system with nested replies
 - Topic-based filtering and navigation
 - Admin dashboard for content moderation
+- Real-time notifications popover with unread count badge
+- Search results page with PostCard-based content display
 
 ### Backend Architecture
 
@@ -66,6 +68,8 @@ Preferred communication style: Simple, everyday language.
 - `/api/admin` - Admin-only moderation and verification endpoints
 - `/api/sheerid` - SheerID educator verification integration
 - `/api/n8n` - Webhook endpoints for automated content creation
+- `/api/notifications` - Notification management (fetch, unread count, mark as read)
+- `/api/search` - Full-text search across verified content (title, body, topics)
 - Middleware for authentication (authenticateToken, optionalAuth, requireRole)
 
 **Business Logic Patterns**
@@ -74,6 +78,8 @@ Preferred communication style: Simple, everyday language.
 - ML-based feed ranking algorithm (mock implementation with scoring: verification +2, topic match +1.5/topic, popularity normalized, age penalty)
 - Content moderation with admin approval queue
 - Social features: nested comments, likes, bookmarks, reporting system
+- Notification system: auto-generates notifications for content verification, likes, comments, and replies (excludes self-interactions)
+- Search functionality: full-text search across verified content using PostgreSQL ILIKE with topic array unnesting
 
 ### Data Storage
 
@@ -88,8 +94,9 @@ Preferred communication style: Simple, everyday language.
 - SheerID Verifications: userId, verificationId, status, verificationData (JSONB)
 - Content: title, excerpt, body, mediaUrl, topics, authorId, verificationStatus, popularity
 - Social Interactions: likes, bookmarks, comments (with nested structure), reports
+- Notifications: userId, type, title, message, contentId (optional), commentId (optional), read status, timestamps
 - Sessions: userId, token, expiration for auth session management
-- Enums: user_role (user, educator, admin), verification_status (pending, verified, rejected), content_type (article, video, podcast)
+- Enums: user_role (user, educator, admin), verification_status (pending, verified, rejected), content_type (article, video, podcast), notification_type (content_verified, content_rejected, like_added, comment_added, comment_reply)
 
 **Schema Design Decisions**
 - JSONB fields for flexible data storage (verificationData, consent metadata)
