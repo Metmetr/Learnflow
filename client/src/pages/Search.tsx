@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Search as SearchIcon } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import ContentCard from "@/components/ContentCard";
+import PostCard, { type Post } from "@/components/PostCard";
 
 interface SearchResult {
   id: string;
@@ -54,15 +53,19 @@ export default function Search() {
       ) : isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader>
+            <Card key={i} className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-2/3" />
-              </CardContent>
+              </div>
             </Card>
           ))}
         </div>
@@ -80,29 +83,31 @@ export default function Search() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {results.map((result) => (
-            <ContentCard
-              key={result.id}
-              content={{
-                id: result.id,
-                title: result.title,
-                excerpt: result.excerpt,
-                mediaUrl: result.mediaUrl,
-                topics: result.topics,
-                createdAt: result.createdAt,
-                verificationStatus: "verified" as const,
-                authorId: result.authorId,
-                authorName: result.authorName,
-                authorAvatar: result.authorAvatar,
-                body: "",
-                popularity: 0,
-                verifiedBy: null,
-                verifiedAt: null,
-                contentType: "article" as const,
-              }}
-              data-testid={`search-result-${result.id}`}
-            />
-          ))}
+          {results.map((result) => {
+            const post: Post = {
+              id: result.id,
+              title: result.title,
+              excerpt: result.excerpt || "",
+              mediaUrl: result.mediaUrl || undefined,
+              topics: result.topics,
+              author: {
+                id: result.authorId,
+                name: result.authorName,
+                avatar: result.authorAvatar || undefined,
+                verified: true,
+              },
+              createdAt: result.createdAt,
+              verificationStatus: "verified" as const,
+              likes: 0,
+              comments: 0,
+            };
+            return (
+              <PostCard
+                key={result.id}
+                post={post}
+              />
+            );
+          })}
         </div>
       )}
     </div>

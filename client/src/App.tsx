@@ -10,6 +10,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import Bookmarks from "@/pages/Bookmarks";
+import Search from "@/pages/Search";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/feed" component={Feed} />
+      <Route path="/search" component={Search} />
       <Route path="/content/:id" component={ContentDetail} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/profile" component={Profile} />
