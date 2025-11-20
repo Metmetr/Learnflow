@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
 import { db } from "../db";
-import { content, users, reports, sheeridVerifications } from "@shared/schema";
+import { content, users, reports, sheeridVerifications, notifications } from "@shared/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { isAuthenticated as authenticateToken, requireRole, type AuthRequest } from "../replitAuth";
 
@@ -55,6 +55,16 @@ router.post("/moderation/approve/:id", async (req: AuthRequest, res: Response) =
       return res.status(404).json({ error: "Content not found" });
     }
 
+    // Create notification for content author
+    await db.insert(notifications).values({
+      userId: updated.authorId,
+      type: "content_verified",
+      title: "İçeriğiniz onaylandı",
+      message: `"${updated.title}" başlıklı içeriğiniz yönetici tarafından onaylandı ve yayınlandı.`,
+      contentId: updated.id,
+      read: false,
+    });
+
     res.json(updated);
   } catch (error) {
     console.error("Approve content error:", error);
@@ -80,6 +90,16 @@ router.post("/moderation/reject/:id", async (req: AuthRequest, res: Response) =>
     if (!updated) {
       return res.status(404).json({ error: "Content not found" });
     }
+
+    // Create notification for content author
+    await db.insert(notifications).values({
+      userId: updated.authorId,
+      type: "content_rejected",
+      title: "İçeriğiniz reddedildi",
+      message: `"${updated.title}" başlıklı içeriğiniz moderasyon sürecinde reddedildi.`,
+      contentId: updated.id,
+      read: false,
+    });
 
     res.json(updated);
   } catch (error) {

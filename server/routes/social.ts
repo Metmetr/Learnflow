@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
 import { db } from "../db";
-import { likes, bookmarks, comments, reports, users } from "@shared/schema";
+import { likes, bookmarks, comments, reports, users, notifications, content } from "@shared/schema";
 import { eq, and, desc, sql, isNull } from "drizzle-orm";
 import { isAuthenticated as authenticateToken, type AuthRequest } from "../replitAuth";
 import {
@@ -38,6 +38,31 @@ router.post("/likes", authenticateToken, async (req: AuthRequest, res: Response)
       .insert(likes)
       .values({ contentId, userId: req.user!.id })
       .returning();
+
+    // Get content info to create notification
+    const [contentInfo] = await db
+      .select({ title: content.title, authorId: content.authorId })
+      .from(content)
+      .where(eq(content.id, contentId))
+      .limit(1);
+
+    // Create notification for content author (but not if they liked their own content)
+    if (contentInfo && contentInfo.authorId !== req.user!.id) {
+      const [liker] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, req.user!.id))
+        .limit(1);
+
+      await db.insert(notifications).values({
+        userId: contentInfo.authorId,
+        type: "like_added",
+        title: "İçeriğiniz beğenildi",
+        message: `${liker?.name || "Bir kullanıcı"} "${contentInfo.title}" başlıklı içeriğinizi beğendi.`,
+        contentId,
+        read: false,
+      });
+    }
 
     res.status(201).json(newLike);
   } catch (error) {
@@ -206,6 +231,46 @@ router.post("/comments", authenticateToken, async (req: AuthRequest, res: Respon
       .from(users)
       .where(eq(users.id, req.user!.id))
       .limit(1);
+
+    // Get content info to create notification
+    const [contentInfo] = await db
+      .select({ title: content.title, authorId: content.authorId })
+      .from(content)
+      .where(eq(content.id, newComment.contentId))
+      .limit(1);
+
+    // Create notification for content author or parent comment author
+    if (newComment.parentId) {
+      // This is a reply to a comment
+      const [parentComment] = await db
+        .select({ authorId: comments.authorId })
+        .from(comments)
+        .where(eq(comments.id, newComment.parentId))
+        .limit(1);
+
+      if (parentComment && parentComment.authorId !== req.user!.id) {
+        await db.insert(notifications).values({
+          userId: parentComment.authorId,
+          type: "comment_reply",
+          title: "Yorumunuza yanıt verildi",
+          message: `${author?.name || "Bir kullanıcı"} yorumunuza yanıt verdi.`,
+          contentId: newComment.contentId,
+          commentId: newComment.id,
+          read: false,
+        });
+      }
+    } else if (contentInfo && contentInfo.authorId !== req.user!.id) {
+      // This is a top-level comment
+      await db.insert(notifications).values({
+        userId: contentInfo.authorId,
+        type: "comment_added",
+        title: "İçeriğinize yorum yapıldı",
+        message: `${author?.name || "Bir kullanıcı"} "${contentInfo.title}" başlıklı içeriğinize yorum yaptı.`,
+        contentId: newComment.contentId,
+        commentId: newComment.id,
+        read: false,
+      });
+    }
 
     res.status(201).json({
       ...newComment,
