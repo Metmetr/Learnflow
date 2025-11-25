@@ -9,9 +9,9 @@ const router = Router();
 const JARVIS_EMAIL = "jarvis@learnflow.com";
 
 const jarvisContentSchema = z.object({
-  title: z.string().min(5),
+  title: z.string(),
   summary: z.string().optional(),
-  body: z.string().min(20),
+  body: z.string(),
   topic: z.string(),
   mediaUrl: z.string().url().optional().nullable(),
   tags: z.array(z.string()).optional(),
