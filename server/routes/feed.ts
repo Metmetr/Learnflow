@@ -88,34 +88,36 @@ router.get("/personalized", optionalAuth, async (req: AuthRequest, res: Response
 
     const enrichedItems = await Promise.all(
       results.map(async (item) => {
-        const [{ likeCount }] = await db.execute<{ likeCount: number }>(sql`
+        const likeResult = await db.execute<{ likeCount: number }>(sql`
           SELECT COUNT(*)::int as "likeCount"
           FROM likes
           WHERE content_id = ${item.id}
         `);
+        const likeCount = likeResult.rows[0]?.likeCount || 0;
 
-        const [{ commentCount }] = await db.execute<{ commentCount: number }>(sql`
+        const commentResult = await db.execute<{ commentCount: number }>(sql`
           SELECT COUNT(*)::int as "commentCount"
           FROM comments
           WHERE content_id = ${item.id}
         `);
+        const commentCount = commentResult.rows[0]?.commentCount || 0;
 
         let isLiked = false;
         let isBookmarked = false;
         if (req.user) {
-          const [{ liked }] = await db.execute<{ liked: number }>(sql`
+          const likedResult = await db.execute<{ liked: number }>(sql`
             SELECT COUNT(*)::int as liked
             FROM likes
             WHERE content_id = ${item.id} AND user_id = ${req.user.id}
           `);
-          isLiked = liked > 0;
+          isLiked = (likedResult.rows[0]?.liked || 0) > 0;
 
-          const [{ bookmarked }] = await db.execute<{ bookmarked: number }>(sql`
+          const bookmarkedResult = await db.execute<{ bookmarked: number }>(sql`
             SELECT COUNT(*)::int as bookmarked
             FROM bookmarks
             WHERE content_id = ${item.id} AND user_id = ${req.user.id}
           `);
-          isBookmarked = bookmarked > 0;
+          isBookmarked = (bookmarkedResult.rows[0]?.bookmarked || 0) > 0;
         }
 
         const isJarvis = item.source === "jarvis" || item.source === "n8n";

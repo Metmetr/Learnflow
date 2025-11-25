@@ -85,29 +85,35 @@ router.delete("/content/:id", async (req: AuthRequest, res: Response) => {
 
 router.get("/stats", async (req: AuthRequest, res: Response) => {
   try {
-    const [{ totalUsers }] = await db.execute<{ totalUsers: number }>(sql`
+    const usersResult = await db.execute<{ totalUsers: number }>(sql`
       SELECT COUNT(*)::int as "totalUsers" FROM users WHERE role != 'admin'
     `);
+    const totalUsers = usersResult.rows[0]?.totalUsers || 0;
 
-    const [{ totalContent }] = await db.execute<{ totalContent: number }>(sql`
+    const contentResult = await db.execute<{ totalContent: number }>(sql`
       SELECT COUNT(*)::int as "totalContent" FROM content
     `);
+    const totalContent = contentResult.rows[0]?.totalContent || 0;
 
-    const [{ jarvisContent }] = await db.execute<{ jarvisContent: number }>(sql`
+    const jarvisResult = await db.execute<{ jarvisContent: number }>(sql`
       SELECT COUNT(*)::int as "jarvisContent" FROM content WHERE source IN ('jarvis', 'n8n')
     `);
+    const jarvisContent = jarvisResult.rows[0]?.jarvisContent || 0;
 
-    const [{ totalLikes }] = await db.execute<{ totalLikes: number }>(sql`
+    const likesResult = await db.execute<{ totalLikes: number }>(sql`
       SELECT COUNT(*)::int as "totalLikes" FROM likes
     `);
+    const totalLikes = likesResult.rows[0]?.totalLikes || 0;
 
-    const [{ totalComments }] = await db.execute<{ totalComments: number }>(sql`
+    const commentsResult = await db.execute<{ totalComments: number }>(sql`
       SELECT COUNT(*)::int as "totalComments" FROM comments
     `);
+    const totalComments = commentsResult.rows[0]?.totalComments || 0;
 
-    const [{ pendingReports }] = await db.execute<{ pendingReports: number }>(sql`
+    const reportsResult = await db.execute<{ pendingReports: number }>(sql`
       SELECT COUNT(*)::int as "pendingReports" FROM reports WHERE status = 'pending'
     `);
+    const pendingReports = reportsResult.rows[0]?.pendingReports || 0;
 
     res.json({
       totalUsers,
