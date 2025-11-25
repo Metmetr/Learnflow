@@ -1,3 +1,4 @@
+
 import { Router, type Request, type Response } from "express";
 import { db } from "../db";
 import { content, users } from "@shared/schema";
@@ -8,7 +9,7 @@ const router = Router();
 
 const JARVIS_API_KEY = process.env.N8N_API_KEY || "jarvis-development-key";
 const JARVIS_EMAIL = "jarvis@learnflow.com";
-
+console.log("BACKEND KEY:", process.env.N8N_API_KEY);
 function verifyJarvisKey(req: Request, res: Response, next: Function) {
   const apiKey = req.headers["x-api-key"] || req.headers["x-n8n-key"];
 
