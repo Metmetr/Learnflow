@@ -60,34 +60,36 @@ router.get("/", optionalAuth, async (req: AuthRequest, res: Response) => {
 
     const enrichedResults = await Promise.all(
       results.map(async (item) => {
-        const [{ likeCount }] = await db.execute<{ likeCount: number }>(sql`
+        const likeResult = await db.execute(sql`
           SELECT COUNT(*)::int as "likeCount"
           FROM likes
           WHERE content_id = ${item.id}
         `);
+        const likeCount = (likeResult.rows[0] as any)?.likeCount ?? 0;
 
-        const [{ commentCount }] = await db.execute<{ commentCount: number }>(sql`
+        const commentResult = await db.execute(sql`
           SELECT COUNT(*)::int as "commentCount"
           FROM comments
           WHERE content_id = ${item.id}
         `);
+        const commentCount = (commentResult.rows[0] as any)?.commentCount ?? 0;
 
         let isLiked = false;
         let isBookmarked = false;
         if (req.user) {
-          const [{ liked }] = await db.execute<{ liked: number }>(sql`
+          const likedResult = await db.execute(sql`
             SELECT COUNT(*)::int as liked
             FROM likes
             WHERE content_id = ${item.id} AND user_id = ${req.user.id}
           `);
-          isLiked = liked > 0;
+          isLiked = ((likedResult.rows[0] as any)?.liked ?? 0) > 0;
 
-          const [{ bookmarked }] = await db.execute<{ bookmarked: number }>(sql`
+          const bookmarkedResult = await db.execute(sql`
             SELECT COUNT(*)::int as bookmarked
             FROM bookmarks
             WHERE content_id = ${item.id} AND user_id = ${req.user.id}
           `);
-          isBookmarked = bookmarked > 0;
+          isBookmarked = ((bookmarkedResult.rows[0] as any)?.bookmarked ?? 0) > 0;
         }
 
         const isJarvis = item.source === "jarvis" || item.source === "n8n";
@@ -151,34 +153,36 @@ router.get("/:id", optionalAuth, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Content not found" });
     }
 
-    const [{ likeCount }] = await db.execute<{ likeCount: number }>(sql`
+    const likeResult = await db.execute(sql`
       SELECT COUNT(*)::int as "likeCount"
       FROM likes
       WHERE content_id = ${id}
     `);
+    const likeCount = (likeResult.rows[0] as any)?.likeCount ?? 0;
 
-    const [{ commentCount }] = await db.execute<{ commentCount: number }>(sql`
+    const commentResult = await db.execute(sql`
       SELECT COUNT(*)::int as "commentCount"
       FROM comments
       WHERE content_id = ${id}
     `);
+    const commentCount = (commentResult.rows[0] as any)?.commentCount ?? 0;
 
     let isLiked = false;
     let isBookmarked = false;
     if (req.user) {
-      const [{ liked }] = await db.execute<{ liked: number }>(sql`
+      const likedResult = await db.execute(sql`
         SELECT COUNT(*)::int as liked
         FROM likes
         WHERE content_id = ${id} AND user_id = ${req.user.id}
       `);
-      isLiked = liked > 0;
+      isLiked = ((likedResult.rows[0] as any)?.liked ?? 0) > 0;
 
-      const [{ bookmarked }] = await db.execute<{ bookmarked: number }>(sql`
+      const bookmarkedResult = await db.execute(sql`
         SELECT COUNT(*)::int as bookmarked
         FROM bookmarks
         WHERE content_id = ${id} AND user_id = ${req.user.id}
       `);
-      isBookmarked = bookmarked > 0;
+      isBookmarked = ((bookmarkedResult.rows[0] as any)?.bookmarked ?? 0) > 0;
     }
 
     const isJarvis = result.source === "jarvis" || result.source === "n8n";
@@ -267,10 +271,11 @@ router.get(
 
       const enrichedResults = await Promise.all(
         (results.rows as any[]).map(async (item) => {
-          const [{ liked }] = await db.execute<{ liked: number }>(sql`
+          const likedResult = await db.execute(sql`
             SELECT COUNT(*)::int as liked FROM likes 
             WHERE content_id = ${item.id} AND user_id = ${req.user!.id}
           `);
+          const liked = (likedResult.rows[0] as any)?.liked ?? 0;
 
           return {
             id: item.id,
@@ -329,10 +334,11 @@ router.get(
 
       const enrichedResults = await Promise.all(
         (results.rows as any[]).map(async (item) => {
-          const [{ bookmarked }] = await db.execute<{ bookmarked: number }>(sql`
+          const bookmarkedResult = await db.execute(sql`
             SELECT COUNT(*)::int as bookmarked FROM bookmarks 
             WHERE content_id = ${item.id} AND user_id = ${req.user!.id}
           `);
+          const bookmarked = (bookmarkedResult.rows[0] as any)?.bookmarked ?? 0;
 
           return {
             id: item.id,

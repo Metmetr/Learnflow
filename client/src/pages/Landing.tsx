@@ -1,138 +1,83 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import PostCard from "@/components/PostCard";
-import EducatorCard from "@/components/EducatorCard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Shield, Users, TrendingUp } from "lucide-react";
-import educatorImage1 from "@assets/generated_images/Turkish_female_educator_portrait_f68f89da.png";
-import educatorImage2 from "@assets/generated_images/Turkish_male_educator_portrait_b66a1d53.png";
-import mathImage from "@assets/generated_images/Mathematics_educational_illustration_1451ee54.png";
-import bioImage from "@assets/generated_images/Biology_scientific_illustration_e921027e.png";
+import { Card, CardContent } from "@/components/ui/card";
+import { Bot, Sparkles, BookOpen, TrendingUp } from "lucide-react";
 
 export default function Landing() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+
+  const { data: posts = [], isLoading: postsLoading } = useQuery({
+    queryKey: ["/api/content"],
+  });
 
   useEffect(() => {
-    // Only redirect after auth check completes and user is confirmed logged in
     if (!isLoading && user) {
       setLocation("/feed");
     }
   }, [user, isLoading, setLocation]);
-  const featuredPosts = [
-    {
-      id: "1",
-      title: "Diferansiyel Denklemler ve Gerçek Hayat Uygulamaları",
-      excerpt: "Matematik derslerinde öğrendiğimiz diferansiyel denklemlerin mühendislik, fizik ve ekonomide nasıl kullanıldığını keşfedin.",
-      mediaUrl: mathImage,
-      topics: ["Matematik", "Uygulamalar"],
-      author: {
-        id: "1",
-        name: "Dr. Ayşe Yılmaz",
-        avatar: educatorImage1,
-        verified: true,
-      },
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-      verificationStatus: "verified" as const,
-      likes: 234,
-      comments: 45,
-    },
-    {
-      id: "2",
-      title: "Hücre Bölünmesi: Mitoz ve Mayoz",
-      excerpt: "Canlılarda hücre bölünmesinin iki temel türünü, mitoz ve mayozu detaylı şekilde inceleyelim. Animasyonlar ve şemalarla desteklenmiş içerik.",
-      mediaUrl: bioImage,
-      topics: ["Biyoloji", "Genetik"],
-      author: {
-        id: "2",
-        name: "Prof. Dr. Mehmet Kaya",
-        avatar: educatorImage2,
-        verified: true,
-      },
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-      verificationStatus: "verified" as const,
-      likes: 189,
-      comments: 32,
-    },
-  ];
 
-  const topEducators = [
-    {
-      id: "1",
-      name: "Dr. Ayşe Yılmaz",
-      avatar: educatorImage1,
-      specialty: "Matematik",
-      verified: true,
-      followers: 2543,
-      postsCount: 127,
-    },
-    {
-      id: "2",
-      name: "Prof. Dr. Mehmet Kaya",
-      avatar: educatorImage2,
-      specialty: "Fizik",
-      verified: true,
-      followers: 1876,
-      postsCount: 94,
-    },
-  ];
+  const filteredPosts = selectedTopic
+    ? (posts as any[]).filter((post: any) => post.topics?.includes(selectedTopic))
+    : (posts as any[]).slice(0, 6);
+
+  const handleTopicSelect = (topic: string) => {
+    setSelectedTopic(topic === selectedTopic ? null : topic);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar showSearch={false} />
 
       <main className="container max-w-7xl mx-auto px-4 py-8 space-y-12">
-        <Hero />
+        <Hero onTopicSelect={handleTopicSelect} />
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="space-y-0 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-primary/10">
-                  <CheckCircle2 className="h-5 w-5 text-primary" />
+          <Card className="hover-elevate">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                  <Bot className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle className="text-base">Doğrulanmış İçerik</CardTitle>
+                <h3 className="text-lg font-semibold">AI Destekli İçerik</h3>
               </div>
-            </CardHeader>
-            <CardContent>
               <p className="text-sm text-muted-foreground">
-                Tüm içerikler akademik uzmanlar tarafından incelenir ve doğrulanır.
+                Jarvis, güncel ve kaliteli eğitim içerikleri oluşturmak için yapay zeka kullanır.
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="space-y-0 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-primary/10">
-                  <Shield className="h-5 w-5 text-primary" />
+          <Card className="hover-elevate">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                  <BookOpen className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle className="text-base">Güvenilir Eğitimciler</CardTitle>
+                <h3 className="text-lg font-semibold">Çeşitli Konular</h3>
               </div>
-            </CardHeader>
-            <CardContent>
               <p className="text-sm text-muted-foreground">
-                SheerID ile doğrulanmış öğretmenler ve akademisyenlerden öğrenin.
+                Matematik, fizik, tarih, biyoloji ve daha birçok konuda içerik keşfedin.
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="space-y-0 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-primary/10">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+          <Card className="hover-elevate">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                  <TrendingUp className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle className="text-base">Kişiselleştirilmiş Öğrenme</CardTitle>
+                <h3 className="text-lg font-semibold">Kişiselleştirilmiş Akış</h3>
               </div>
-            </CardHeader>
-            <CardContent>
               <p className="text-sm text-muted-foreground">
-                İlgi alanlarınıza göre özelleştirilmiş içerik akışı.
+                İlgi alanlarınıza göre özelleştirilmiş içerik önerileri alın.
               </p>
             </CardContent>
           </Card>
@@ -140,86 +85,102 @@ export default function Landing() {
 
         <section className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Öne Çıkan İçerikler</h2>
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-6 w-6 text-primary" />
+              <h2 className="text-2xl font-bold" data-testid="heading-featured">
+                {selectedTopic ? `${selectedTopic} İçerikleri` : "Jarvis'ten Son İçerikler"}
+              </h2>
+            </div>
             <Button variant="ghost" asChild data-testid="button-view-all">
               <Link href="/feed">Tümünü Gör</Link>
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {featuredPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
+          {postsLoading ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="h-64 animate-pulse bg-muted/50" />
+              ))}
+            </div>
+          ) : filteredPosts.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredPosts.map((post: any) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Bot className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-xl font-semibold mb-2">Henüz içerik yok</h3>
+                <p className="text-muted-foreground mb-6">
+                  Jarvis yakında yeni içerikler paylaşmaya başlayacak!
+                </p>
+                <Button asChild data-testid="button-explore-cta">
+                  <Link href="/feed">Akışı Keşfet</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </section>
 
-        <section className="space-y-6">
-          <h2 className="text-2xl font-bold">Öne Çıkan Eğitimciler</h2>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {topEducators.map((educator) => (
-              <EducatorCard key={educator.id} {...educator} />
-            ))}
-          </div>
-        </section>
-
-        <section className="bg-primary/5 rounded-lg p-8 md:p-12 text-center space-y-6">
-          <div className="max-w-2xl mx-auto space-y-4">
-            <h2 className="text-3xl font-bold">Eğitimci misiniz?</h2>
+        <section className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-8 md:p-12">
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            <div className="flex items-center justify-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                <Bot className="h-8 w-8" />
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold">Jarvis ile Öğrenmeye Başla</h2>
             <p className="text-lg text-muted-foreground">
-              SheerID ile kimliğinizi doğrulayın ve binlerce öğrenciye ulaşın. 
-              Bilginizi paylaşın, eğitim topluluğumuzun bir parçası olun.
+              Yapay zeka destekli eğitim içeriklerini keşfet, beğen, kaydet ve yorum yap.
+              Öğrenme deneyimini kişiselleştir.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-              <Button size="lg" data-testid="button-educator-signup">
-                <Users className="mr-2 h-4 w-4" />
-                Eğitimci Olarak Katıl
+              <Button size="lg" asChild data-testid="button-start-learning">
+                <a href="/api/login">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Hemen Başla
+                </a>
               </Button>
-              <Button size="lg" variant="outline" asChild data-testid="button-learn-more">
-                <Link href="/about">Daha Fazla Bilgi</Link>
+              <Button size="lg" variant="outline" asChild data-testid="button-explore">
+                <Link href="/jarvis">Jarvis'i Tanı</Link>
               </Button>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="border-t mt-12">
+      <footer className="border-t mt-12 bg-muted/30">
         <div className="container max-w-7xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="font-semibold mb-3">LearnFlow</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/about">Hakkımızda</Link></li>
-                <li><Link href="/careers">Kariyer</Link></li>
-                <li><Link href="/press">Basın</Link></li>
-              </ul>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <span className="text-lg font-bold">LF</span>
+              </div>
+              <div>
+                <span className="font-semibold">LearnFlow</span>
+                <p className="text-xs text-muted-foreground">Powered by Jarvis AI</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold mb-3">Topluluk</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/educators">Eğitimciler</Link></li>
-                <li><Link href="/topics">Konular</Link></li>
-                <li><Link href="/guidelines">Kurallar</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-3">Destek</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/help">Yardım Merkezi</Link></li>
-                <li><Link href="/contact">İletişim</Link></li>
-                <li><Link href="/faq">SSS</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-3">Yasal</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/privacy">Gizlilik</Link></li>
-                <li><Link href="/terms">Kullanım Koşulları</Link></li>
-                <li><Link href="/kvkk">KVKK</Link></li>
-              </ul>
-            </div>
+
+            <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
+              <Link href="/about" className="hover:text-foreground transition-colors" data-testid="link-about">
+                Hakkımızda
+              </Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-privacy">
+                Gizlilik
+              </Link>
+              <Link href="/terms" className="hover:text-foreground transition-colors" data-testid="link-terms">
+                Kullanım Koşulları
+              </Link>
+              <Link href="/contact" className="hover:text-foreground transition-colors" data-testid="link-contact">
+                İletişim
+              </Link>
+            </nav>
           </div>
-          <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
+
+          <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground">
             © 2024 LearnFlow. Tüm hakları saklıdır.
           </div>
         </div>
