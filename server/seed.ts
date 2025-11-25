@@ -20,78 +20,23 @@ async function seed() {
     .returning();
   console.log("Created admin user");
 
-  // Create system user for n8n
-  const [systemUser] = await db
+  // Create Jarvis AI user - the sole content creator
+  const [jarvis] = await db
     .insert(users)
     .values({
-      email: "system@learnflow.com",
-      name: "LearnFlow System",
+      email: "jarvis@learnflow.com",
+      name: "Jarvis",
       password: null,
       role: "admin",
       verified: true,
+      specialty: "Yapay Zeka Destekli Eğitim",
+      bio: "LearnFlow'un yapay zeka destekli içerik oluşturucusu. Matematik, fizik, tarih, biyoloji ve daha birçok konuda kaliteli eğitim içerikleri üretiyor.",
       avatar: null,
     })
     .returning();
-  console.log("Created system user");
+  console.log("Created Jarvis AI user");
 
-  // Create verified educators
-  const educatorPassword = await bcrypt.hash("educator123", 10);
-  
-  const [educator1] = await db
-    .insert(users)
-    .values({
-      email: "ayse.yilmaz@learnflow.com",
-      name: "Dr. Ayşe Yılmaz",
-      password: educatorPassword,
-      role: "educator",
-      verified: true,
-      specialty: "Matematik",
-      bio: "İTÜ Matematik Bölümü öğretim üyesi. 15 yıllık öğretim deneyimi.",
-    })
-    .returning();
-
-  const [educator2] = await db
-    .insert(users)
-    .values({
-      email: "mehmet.kaya@learnflow.com",
-      name: "Prof. Dr. Mehmet Kaya",
-      password: educatorPassword,
-      role: "educator",
-      verified: true,
-      specialty: "Fizik",
-      bio: "ODTÜ Fizik Bölümü öğretim görevlisi. Kuantum mekaniği uzmanı.",
-    })
-    .returning();
-
-  const [educator3] = await db
-    .insert(users)
-    .values({
-      email: "zeynep.demir@learnflow.com",
-      name: "Zeynep Demir",
-      password: educatorPassword,
-      role: "educator",
-      verified: true,
-      specialty: "Tarih",
-      bio: "Ankara Üniversitesi Tarih Bölümü araştırma görevlisi.",
-    })
-    .returning();
-
-  const [educator4] = await db
-    .insert(users)
-    .values({
-      email: "ali.ozkan@learnflow.com",
-      name: "Dr. Ali Özkan",
-      password: educatorPassword,
-      role: "educator",
-      verified: true,
-      specialty: "Biyoloji",
-      bio: "Hacettepe Üniversitesi Moleküler Biyoloji bölümü.",
-    })
-    .returning();
-
-  console.log("Created educators");
-
-  // Create regular users
+  // Create sample regular users for testing
   const userPassword = await bcrypt.hash("user123", 10);
   
   await db.insert(users).values([
@@ -110,9 +55,9 @@ async function seed() {
       verified: false,
     },
   ]);
-  console.log("Created regular users");
+  console.log("Created sample users");
 
-  // Create Turkish educational content
+  // Create AI-generated Turkish educational content from Jarvis
   const contentData = [
     {
       title: "Diferansiyel Denklemler ve Gerçek Hayat Uygulamaları",
@@ -138,7 +83,8 @@ async function seed() {
       excerpt:
         "Matematik derslerinde öğrendiğimiz diferansiyel denklemlerin mühendislik, fizik ve ekonomide nasıl kullanıldığını keşfedin.",
       topics: ["Matematik", "Uygulamalar"],
-      authorId: educator1.id,
+      authorId: jarvis.id,
+      source: "jarvis" as const,
       verificationStatus: "verified" as const,
       verifiedBy: admin.id,
       verifiedAt: new Date(),
@@ -168,7 +114,8 @@ async function seed() {
       excerpt:
         "Canlılarda hücre bölünmesinin iki temel türünü, mitoz ve mayozu detaylı şekilde inceleyelim.",
       topics: ["Biyoloji", "Genetik"],
-      authorId: educator4.id,
+      authorId: jarvis.id,
+      source: "jarvis" as const,
       verificationStatus: "verified" as const,
       verifiedBy: admin.id,
       verifiedAt: new Date(),
@@ -196,7 +143,8 @@ async function seed() {
       excerpt:
         "13. yüzyılın sonlarında Anadolu'da kurulan Osmanlı Beyliği'nin imparatorluğa dönüşüm sürecini inceleyelim.",
       topics: ["Tarih", "Osmanlı"],
-      authorId: educator3.id,
+      authorId: jarvis.id,
+      source: "jarvis" as const,
       verificationStatus: "verified" as const,
       verifiedBy: admin.id,
       verifiedAt: new Date(),
@@ -231,7 +179,8 @@ yuksek_degerler = df[df['puan'] > 80]</code></pre>
       excerpt:
         "Python programlama dilinde veri analizi yapmak için Pandas kütüphanesinin temellerini öğrenin.",
       topics: ["Programlama", "Python"],
-      authorId: educator2.id,
+      authorId: jarvis.id,
+      source: "jarvis" as const,
       verificationStatus: "verified" as const,
       verifiedBy: admin.id,
       verifiedAt: new Date(),
@@ -259,8 +208,11 @@ yuksek_degerler = df[df['puan'] > 80]</code></pre>
       excerpt:
         "Kuantum mekaniğinin en ilginç kavramlarından biri olan dalga-parçacık ikiliğini keşfedin.",
       topics: ["Fizik", "Kuantum"],
-      authorId: educator2.id,
-      verificationStatus: "pending" as const,
+      authorId: jarvis.id,
+      source: "jarvis" as const,
+      verificationStatus: "verified" as const,
+      verifiedBy: admin.id,
+      verifiedAt: new Date(),
       popularity: 145,
     },
     {
@@ -285,7 +237,8 @@ yuksek_degerler = df[df['puan'] > 80]</code></pre>
       excerpt:
         "Kişisel ve profesyonel yaşamda başarı için etkili iletişim becerilerini nasıl geliştirebileceğinizi öğrenin.",
       topics: ["Kişisel Gelişim", "İletişim"],
-      authorId: educator1.id,
+      authorId: jarvis.id,
+      source: "jarvis" as const,
       verificationStatus: "verified" as const,
       verifiedBy: admin.id,
       verifiedAt: new Date(),
@@ -323,22 +276,56 @@ yuksek_degerler = df[df['puan'] > 80]</code></pre>
       excerpt:
         "JavaScript'te asenkron programlamanın temellerini ve modern yaklaşımlarını öğrenin.",
       topics: ["Programlama", "JavaScript"],
-      authorId: educator2.id,
+      authorId: jarvis.id,
+      source: "jarvis" as const,
       verificationStatus: "verified" as const,
       verifiedBy: admin.id,
       verifiedAt: new Date(),
       popularity: 211,
     },
+    {
+      title: "Kimyasal Bağlar: İyonik ve Kovalent",
+      body: `<h2>Kimyasal Bağ Nedir?</h2>
+<p>Kimyasal bağ, atomları bir arada tutan kuvvettir. Atomlar arasında elektron paylaşımı veya transferi ile oluşur.</p>
+
+<h2>İyonik Bağ</h2>
+<p>Metal ve ametal atomları arasında elektron transferi ile oluşur:</p>
+<ul>
+<li>Sodyum klorür (NaCl) - sofra tuzu</li>
+<li>Yüksek erime ve kaynama noktaları</li>
+<li>Suda çözündüğünde elektrik iletir</li>
+</ul>
+
+<h2>Kovalent Bağ</h2>
+<p>Ametal atomları arasında elektron paylaşımı ile oluşur:</p>
+<ul>
+<li>Su (H₂O), karbon dioksit (CO₂)</li>
+<li>Genellikle daha düşük erime noktaları</li>
+<li>Polar ve apolar türleri vardır</li>
+</ul>
+
+<h2>Metalik Bağ</h2>
+<p>Metal atomları arasında serbest elektronların oluşturduğu bağdır. Metallerin elektrik ve ısı iletkenliğini açıklar.</p>`,
+      excerpt:
+        "Atomları bir arada tutan iyonik ve kovalent bağların özelliklerini ve farklarını öğrenin.",
+      topics: ["Kimya", "Moleküler Yapı"],
+      authorId: jarvis.id,
+      source: "jarvis" as const,
+      verificationStatus: "verified" as const,
+      verifiedBy: admin.id,
+      verifiedAt: new Date(),
+      popularity: 167,
+    },
   ];
 
   await db.insert(content).values(contentData);
-  console.log("Created Turkish educational content");
+  console.log("Created AI-generated educational content from Jarvis");
 
   console.log("Database seed completed successfully!");
   console.log("\nTest Credentials:");
   console.log("Admin: admin@learnflow.com / admin123");
-  console.log("Educator: ayse.yilmaz@learnflow.com / educator123");
   console.log("User: can.yilmaz@example.com / user123");
+  console.log("\nJarvis AI user: jarvis@learnflow.com (no password - API only)");
 }
 
 seed()

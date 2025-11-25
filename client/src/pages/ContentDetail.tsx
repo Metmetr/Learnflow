@@ -1,100 +1,161 @@
-import { useState } from "react";
-import { Link } from "wouter";
-import { ArrowLeft, Heart, Bookmark, Share2, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useParams } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { ArrowLeft, Heart, Bookmark, Share2, Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 import CommentSection from "@/components/CommentSection";
-import educatorImage from "@assets/generated_images/Turkish_female_educator_portrait_f68f89da.png";
-import mathImage from "@assets/generated_images/Mathematics_educational_illustration_1451ee54.png";
+import { useAuth } from "@/hooks/useAuth";
+import { socialAPI } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
+import { tr } from "date-fns/locale";
+
+interface ContentData {
+  id: string;
+  title: string;
+  body: string;
+  excerpt: string;
+  mediaUrl?: string;
+  topics: string[];
+  type?: string;
+  author: {
+    id: string;
+    name: string;
+    avatar?: string;
+    specialty?: string;
+    bio?: string;
+    isBot?: boolean;
+  };
+  createdAt: string;
+  likes: number;
+  comments: number;
+  isLiked?: boolean;
+  isBookmarked?: boolean;
+}
 
 export default function ContentDetail() {
+  const params = useParams();
+  const contentId = params.id;
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const { data: content, isLoading, error } = useQuery<ContentData>({
+    queryKey: ['/api/content', contentId],
+    enabled: !!contentId,
+  });
+
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
-  const [likeCount, setLikeCount] = useState(234);
+  const [likeCount, setLikeCount] = useState(0);
 
-  const article = {
-    id: "1",
-    title: "Diferansiyel Denklemler ve Gerçek Hayat Uygulamaları",
-    author: {
-      id: "1",
-      name: "Dr. Ayşe Yılmaz",
-      avatar: educatorImage,
-      verified: true,
-      specialty: "Matematik",
-    },
-    publishedAt: new Date(Date.now() - 3600000),
-    readTime: "8 dakika okuma",
-    topics: ["Matematik", "Uygulamalar"],
-    mediaUrl: mathImage,
-    content: `
-      <p>Diferansiyel denklemler, matematiğin en güçlü araçlarından biridir ve doğadaki pek çok olayı modellemek için kullanılır. Bu yazıda, diferansiyel denklemlerin temellerini ve gerçek hayattaki uygulamalarını inceleyeceğiz.</p>
-      
-      <h2>Diferansiyel Denklem Nedir?</h2>
-      <p>Diferansiyel denklem, bir fonksiyon ile bu fonksiyonun türevleri arasındaki ilişkiyi ifade eden bir denklemdir. En basit haliyle, bir değişkenin değişim hızını tanımlar.</p>
-      
-      <h2>Gerçek Hayat Uygulamaları</h2>
-      <p>Diferansiyel denklemler birçok alanda kullanılır:</p>
-      <ul>
-        <li><strong>Fizik:</strong> Newton'un hareket yasaları, elektromanyetik alanlar</li>
-        <li><strong>Mühendislik:</strong> Yapısal analiz, sinyal işleme</li>
-        <li><strong>Biyoloji:</strong> Popülasyon dinamikleri, hastalık yayılımı</li>
-        <li><strong>Ekonomi:</strong> Piyasa modelleri, yatırım stratejileri</li>
-      </ul>
-      
-      <h2>Örnek: Nüfus Artışı Modeli</h2>
-      <p>Bir popülasyonun büyümesi, diferansiyel denklemlerle modellenebilir. Malthus modeli, nüfusun zaman içindeki değişimini şu şekilde ifade eder:</p>
-      <p><em>dP/dt = rP</em></p>
-      <p>Burada P(t) zamana bağlı nüfusu, r ise büyüme oranını temsil eder.</p>
-      
-      <h2>Sonuç</h2>
-      <p>Diferansiyel denklemler, karmaşık sistemleri anlamak ve tahmin etmek için vazgeçilmez bir araçtır. Matematiksel bir kavram olmanın ötesinde, günlük yaşamımızı etkileyen pek çok olayın altında yatan mekanizmaları anlamamızı sağlar.</p>
-    `,
-  };
+  useEffect(() => {
+    if (content) {
+      setLiked(content.isLiked || false);
+      setBookmarked(content.isBookmarked || false);
+      setLikeCount(content.likes || 0);
+    }
+  }, [content]);
 
-  const comments = [
-    {
-      id: "1",
-      author: {
-        id: "user1",
-        name: "Zeynep Demir",
-      },
-      content: "Çok faydalı bir yazı olmuş, özellikle gerçek hayat örnekleri çok açıklayıcı. Teşekkürler!",
-      createdAt: new Date(Date.now() - 3600000),
-      replies: [
-        {
-          id: "2",
-          author: {
-            id: "author1",
-            name: "Dr. Ayşe Yılmaz",
-          },
-          content: "Teşekkür ederim! İlginize sevindim.",
-          createdAt: new Date(Date.now() - 1800000),
-        },
-      ],
+  const likeMutation = useMutation({
+    mutationFn: () => liked ? socialAPI.unlike(contentId!) : socialAPI.like(contentId!),
+    onMutate: () => {
+      setLiked(!liked);
+      setLikeCount(liked ? likeCount - 1 : likeCount + 1);
     },
-    {
-      id: "3",
-      author: {
-        id: "user2",
-        name: "Ahmet Kaya",
-      },
-      content: "Bu konuyla ilgili daha detaylı kaynak önerebilir misiniz?",
-      createdAt: new Date(Date.now() - 7200000),
+    onError: () => {
+      setLiked(liked);
+      setLikeCount(likeCount);
+      toast({
+        title: "Hata",
+        description: "İşlem gerçekleştirilemedi.",
+        variant: "destructive",
+      });
     },
-  ];
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/content', contentId] });
+    },
+  });
+
+  const bookmarkMutation = useMutation({
+    mutationFn: () => bookmarked ? socialAPI.unbookmark(contentId!) : socialAPI.bookmark(contentId!),
+    onMutate: () => {
+      setBookmarked(!bookmarked);
+    },
+    onError: () => {
+      setBookmarked(bookmarked);
+      toast({
+        title: "Hata",
+        description: "İşlem gerçekleştirilemedi.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/content', contentId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/content/bookmarks/my'] });
+    },
+  });
 
   const handleLike = () => {
-    setLiked(!liked);
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
-    console.log("Like toggled");
+    if (!user) {
+      toast({
+        title: "Giriş yapın",
+        description: "Beğeni yapmak için giriş yapmanız gerekiyor.",
+      });
+      return;
+    }
+    likeMutation.mutate();
   };
 
   const handleBookmark = () => {
-    setBookmarked(!bookmarked);
-    console.log("Bookmark toggled");
+    if (!user) {
+      toast({
+        title: "Giriş yapın",
+        description: "Kaydetmek için giriş yapmanız gerekiyor.",
+      });
+      return;
+    }
+    bookmarkMutation.mutate();
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !content) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container max-w-4xl mx-auto px-4 py-8">
+          <Button variant="ghost" size="sm" asChild data-testid="button-back">
+            <Link href="/feed">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Geri
+            </Link>
+          </Button>
+          <Card className="mt-8">
+            <CardContent className="p-12 text-center">
+              <h2 className="text-xl font-semibold mb-2">İçerik bulunamadı</h2>
+              <p className="text-muted-foreground mb-4">Bu içerik silinmiş veya mevcut değil.</p>
+              <Button asChild>
+                <Link href="/feed">Akışa Dön</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const isBot = content.author.isBot;
+  const authorProfileLink = isBot ? "/jarvis" : `/profile/${content.author.id}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -114,6 +175,7 @@ export default function ContentDetail() {
                 size="icon"
                 className={liked ? "text-red-500" : ""}
                 onClick={handleLike}
+                disabled={likeMutation.isPending}
                 data-testid="button-like"
               >
                 <Heart className={`h-5 w-5 ${liked ? "fill-current" : ""}`} />
@@ -123,6 +185,7 @@ export default function ContentDetail() {
                 size="icon"
                 className={bookmarked ? "text-primary" : ""}
                 onClick={handleBookmark}
+                disabled={bookmarkMutation.isPending}
                 data-testid="button-bookmark"
               >
                 <Bookmark className={`h-5 w-5 ${bookmarked ? "fill-current" : ""}`} />
@@ -138,46 +201,64 @@ export default function ContentDetail() {
       <article className="container max-w-3xl mx-auto px-4 py-8">
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-2">
-            {article.topics.map((topic) => (
+            {content.topics.map((topic) => (
               <Badge key={topic} variant="secondary">
                 {topic}
               </Badge>
             ))}
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-bold leading-tight font-serif">
-            {article.title}
+          <h1 className="text-4xl md:text-5xl font-bold leading-tight font-serif" data-testid="text-content-title">
+            {content.title}
           </h1>
 
           <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12" data-testid="avatar-author">
-              <AvatarImage src={article.author.avatar} alt={article.author.name} />
-              <AvatarFallback>{article.author.name.charAt(0)}</AvatarFallback>
-            </Avatar>
+            <Link href={authorProfileLink}>
+              <Avatar className="h-12 w-12 cursor-pointer" data-testid="avatar-author">
+                {isBot ? (
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Bot className="h-6 w-6" />
+                  </AvatarFallback>
+                ) : (
+                  <>
+                    <AvatarImage src={content.author.avatar} alt={content.author.name} />
+                    <AvatarFallback>{content.author.name.charAt(0)}</AvatarFallback>
+                  </>
+                )}
+              </Avatar>
+            </Link>
 
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold" data-testid="text-author-name">
-                  {article.author.name}
-                </span>
-                {article.author.verified && (
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                <Link href={authorProfileLink}>
+                  <span className="font-semibold hover:text-primary cursor-pointer" data-testid="text-author-name">
+                    {content.author.name}
+                  </span>
+                </Link>
+                {isBot && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <Bot className="h-3 w-3" />
+                    AI
+                  </Badge>
                 )}
               </div>
               <div className="text-sm text-muted-foreground">
-                {article.author.specialty} • {article.readTime}
+                {content.author.specialty && <span>{content.author.specialty} • </span>}
+                {formatDistanceToNow(new Date(content.createdAt), { addSuffix: true, locale: tr })}
               </div>
             </div>
 
-            <Button size="sm" data-testid="button-follow-author">
-              Takip Et
-            </Button>
+            {!isBot && (
+              <Button size="sm" data-testid="button-follow-author">
+                Takip Et
+              </Button>
+            )}
           </div>
 
-          {article.mediaUrl && (
+          {content.mediaUrl && (
             <img
-              src={article.mediaUrl}
-              alt={article.title}
+              src={content.mediaUrl}
+              alt={content.title}
               className="w-full aspect-video object-cover rounded-lg"
               data-testid="img-article-hero"
             />
@@ -186,25 +267,26 @@ export default function ContentDetail() {
           <Separator />
 
           <div
-            className="prose prose-lg max-w-none font-serif"
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            className="prose prose-lg max-w-none font-serif dark:prose-invert"
+            dangerouslySetInnerHTML={{ __html: content.body }}
             data-testid="article-content"
           />
 
           <Separator />
 
-          <div className="flex items-center justify-between py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 py-4">
             <div className="flex items-center gap-4">
               <Button
                 variant={liked ? "default" : "outline"}
                 onClick={handleLike}
+                disabled={likeMutation.isPending}
                 data-testid="button-like-bottom"
               >
                 <Heart className={`mr-2 h-4 w-4 ${liked ? "fill-current" : ""}`} />
                 {likeCount} Beğeni
               </Button>
               <span className="text-sm text-muted-foreground">
-                {comments.length} Yorum
+                {content.comments} Yorum
               </span>
             </div>
 
@@ -216,7 +298,7 @@ export default function ContentDetail() {
 
           <Separator />
 
-          <CommentSection comments={comments} currentUserId="user1" />
+          <CommentSection contentId={contentId!} />
         </div>
       </article>
     </div>

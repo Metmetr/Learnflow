@@ -1,10 +1,16 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
-import { Trash2 } from "lucide-react";
+import { Trash2, Bot, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { socialAPI } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface Comment {
   id: string;
@@ -12,38 +18,101 @@ interface Comment {
     id: string;
     name: string;
     avatar?: string;
+    isBot?: boolean;
   };
   content: string;
-  createdAt: Date;
+  createdAt: string;
   replies?: Comment[];
 }
 
 interface CommentSectionProps {
-  comments: Comment[];
-  currentUserId?: string;
+  contentId: string;
 }
 
-function CommentItem({ comment, currentUserId, depth = 0 }: { comment: Comment; currentUserId?: string; depth?: number }) {
+function CommentItem({ 
+  comment, 
+  currentUserId, 
+  contentId,
+  depth = 0 
+}: { 
+  comment: Comment; 
+  currentUserId?: string;
+  contentId: string;
+  depth?: number;
+}) {
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const { toast } = useToast();
+  const { user } = useAuth();
   const canDelete = currentUserId === comment.author.id;
 
+  const replyMutation = useMutation({
+    mutationFn: (text: string) => socialAPI.createComment(contentId, text, comment.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/social/comments', contentId] });
+      setReplyText("");
+      setShowReply(false);
+      toast({
+        title: "Yanıt gönderildi",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Yanıt gönderilemedi.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => socialAPI.deleteComment(comment.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/social/comments', contentId] });
+      toast({
+        title: "Yorum silindi",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Yorum silinemedi.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleReply = () => {
-    console.log("Reply to", comment.id, ":", replyText);
-    setReplyText("");
-    setShowReply(false);
+    if (!user) {
+      toast({
+        title: "Giriş yapın",
+        description: "Yanıt yazmak için giriş yapmanız gerekiyor.",
+      });
+      return;
+    }
+    if (replyText.trim()) {
+      replyMutation.mutate(replyText.trim());
+    }
   };
 
   const handleDelete = () => {
-    console.log("Delete comment:", comment.id);
+    deleteMutation.mutate();
   };
 
   return (
     <div className={`${depth > 0 ? "ml-8 mt-4" : "mt-6"}`}>
       <div className="flex gap-3">
         <Avatar className="h-8 w-8" data-testid={`avatar-comment-${comment.id}`}>
-          <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
-          <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
+          {comment.author.isBot ? (
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              <Bot className="h-4 w-4" />
+            </AvatarFallback>
+          ) : (
+            <>
+              <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
+              <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
+            </>
+          )}
         </Avatar>
 
         <div className="flex-1">
@@ -51,8 +120,11 @@ function CommentItem({ comment, currentUserId, depth = 0 }: { comment: Comment; 
             <span className="text-sm font-semibold" data-testid={`text-comment-author-${comment.id}`}>
               {comment.author.name}
             </span>
+            {comment.author.isBot && (
+              <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">AI</span>
+            )}
             <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(comment.createdAt, { addSuffix: true, locale: tr })}
+              {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: tr })}
             </span>
           </div>
 
@@ -78,9 +150,14 @@ function CommentItem({ comment, currentUserId, depth = 0 }: { comment: Comment; 
                 size="sm"
                 className="h-7 px-2 text-xs text-destructive"
                 onClick={handleDelete}
+                disabled={deleteMutation.isPending}
                 data-testid={`button-delete-comment-${comment.id}`}
               >
-                <Trash2 className="h-3 w-3" />
+                {deleteMutation.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3 w-3" />
+                )}
               </Button>
             )}
           </div>
@@ -95,8 +172,13 @@ function CommentItem({ comment, currentUserId, depth = 0 }: { comment: Comment; 
                 data-testid={`textarea-reply-${comment.id}`}
               />
               <div className="flex flex-col gap-2">
-                <Button size="sm" onClick={handleReply} data-testid={`button-submit-reply-${comment.id}`}>
-                  Gönder
+                <Button 
+                  size="sm" 
+                  onClick={handleReply}
+                  disabled={replyMutation.isPending || !replyText.trim()}
+                  data-testid={`button-submit-reply-${comment.id}`}
+                >
+                  {replyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gönder"}
                 </Button>
                 <Button
                   size="sm"
@@ -115,6 +197,7 @@ function CommentItem({ comment, currentUserId, depth = 0 }: { comment: Comment; 
               key={reply.id}
               comment={reply}
               currentUserId={currentUserId}
+              contentId={contentId}
               depth={depth + 1}
             />
           ))}
@@ -124,13 +207,65 @@ function CommentItem({ comment, currentUserId, depth = 0 }: { comment: Comment; 
   );
 }
 
-export default function CommentSection({ comments, currentUserId }: CommentSectionProps) {
+export default function CommentSection({ contentId }: CommentSectionProps) {
   const [newComment, setNewComment] = useState("");
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const { data: comments = [], isLoading } = useQuery<Comment[]>({
+    queryKey: ['/api/social/comments', contentId],
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: (text: string) => socialAPI.createComment(contentId, text),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/social/comments', contentId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/content', contentId] });
+      setNewComment("");
+      toast({
+        title: "Yorum gönderildi",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Yorum gönderilemedi.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSubmit = () => {
-    console.log("New comment:", newComment);
-    setNewComment("");
+    if (!user) {
+      toast({
+        title: "Giriş yapın",
+        description: "Yorum yazmak için giriş yapmanız gerekiyor.",
+      });
+      return;
+    }
+    if (newComment.trim()) {
+      commentMutation.mutate(newComment.trim());
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold">Yorumlar</h3>
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="flex gap-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -138,27 +273,50 @@ export default function CommentSection({ comments, currentUserId }: CommentSecti
 
       <div className="flex gap-3">
         <Avatar className="h-8 w-8">
-          <AvatarFallback>S</AvatarFallback>
+          {user ? (
+            <>
+              <AvatarImage src={(user as any).avatar || undefined} alt={(user as any).name || "User"} />
+              <AvatarFallback>{(user as any).name?.charAt(0) || "U"}</AvatarFallback>
+            </>
+          ) : (
+            <AvatarFallback>?</AvatarFallback>
+          )}
         </Avatar>
         <div className="flex-1 flex gap-2">
           <Textarea
-            placeholder="Yorumunuzu yazın..."
+            placeholder={user ? "Yorumunuzu yazın..." : "Yorum yazmak için giriş yapın..."}
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             className="min-h-20 resize-none"
+            disabled={!user}
             data-testid="textarea-new-comment"
           />
-          <Button onClick={handleSubmit} data-testid="button-submit-comment">
-            Gönder
+          <Button 
+            onClick={handleSubmit}
+            disabled={commentMutation.isPending || !newComment.trim() || !user}
+            data-testid="button-submit-comment"
+          >
+            {commentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gönder"}
           </Button>
         </div>
       </div>
 
-      <div className="divide-y">
-        {comments.map((comment) => (
-          <CommentItem key={comment.id} comment={comment} currentUserId={currentUserId} />
-        ))}
-      </div>
+      {comments.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-8">
+          Henüz yorum yok. İlk yorumu siz yazın!
+        </p>
+      ) : (
+        <div className="divide-y">
+          {comments.map((comment) => (
+            <CommentItem 
+              key={comment.id} 
+              comment={comment} 
+              currentUserId={(user as any)?.id}
+              contentId={contentId}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
