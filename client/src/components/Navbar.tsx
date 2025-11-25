@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Menu, User } from "lucide-react";
+import { Search, Menu, User, Bot } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +63,7 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Konu, eğitimci veya içerik ara..."
+              placeholder="Konu veya içerik ara..."
               className="w-full pl-9"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
@@ -93,9 +93,9 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
                   <div className="flex flex-col space-y-1 p-2">
                     <p className="text-sm font-medium">{user.name}</p>
                     <p className="text-xs text-muted-foreground">{user.email}</p>
-                    {user.verified && (
+                    {user.role === "admin" && (
                       <Badge variant="secondary" className="w-fit text-xs">
-                        {user.role === "educator" ? "Doğrulanmış Eğitimci" : user.role === "admin" ? "Yönetici" : "Kullanıcı"}
+                        Yönetici
                       </Badge>
                     )}
                   </div>
@@ -110,6 +110,17 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
                       Kaydedilenler
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/likes" data-testid="link-likes">
+                      Beğenilenler
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/jarvis" className="flex items-center gap-2" data-testid="link-jarvis">
+                      <Bot className="h-4 w-4" />
+                      Jarvis
+                    </Link>
+                  </DropdownMenuItem>
                   {user.role === "admin" && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin" data-testid="link-admin">
@@ -117,11 +128,6 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings" data-testid="link-settings">
-                      Ayarlar
-                    </Link>
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <a href="/api/logout" data-testid="button-logout">

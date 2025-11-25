@@ -11,20 +11,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import Navbar from "@/components/Navbar";
+import PostCard from "@/components/PostCard";
 import { 
   User, 
   Mail, 
   Edit3, 
   X, 
   Save, 
-  FileText, 
   Heart, 
-  MessageCircle,
-  CheckCircle2,
-  Clock,
-  XCircle,
+  Bookmark,
   TrendingUp
 } from "lucide-react";
 
@@ -36,13 +33,13 @@ export default function Profile() {
   const [editedSpecialty, setEditedSpecialty] = useState("");
   const [editedBio, setEditedBio] = useState("");
 
-  const { data: userContent, isLoading: contentLoading } = useQuery({
-    queryKey: ["/api/user/content"],
+  const { data: likedContent = [], isLoading: likesLoading } = useQuery({
+    queryKey: ["/api/content/likes/my"],
     enabled: !!user,
   });
 
-  const { data: stats } = useQuery({
-    queryKey: ["/api/user/stats"],
+  const { data: bookmarkedContent = [], isLoading: bookmarksLoading } = useQuery({
+    queryKey: ["/api/content/bookmarks/my"],
     enabled: !!user,
   });
 
@@ -102,32 +99,6 @@ export default function Profile() {
     setEditedBio("");
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "verified":
-        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-yellow-600" />;
-      case "rejected":
-        return <XCircle className="h-4 w-4 text-red-600" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "verified":
-        return "Onaylandı";
-      case "pending":
-        return "Beklemede";
-      case "rejected":
-        return "Reddedildi";
-      default:
-        return status;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -163,10 +134,9 @@ export default function Profile() {
                   <div className="space-y-2 w-full">
                     <h2 className="text-xl font-semibold">{(user as any).name}</h2>
                     
-                    {(user as any).verified && (
+                    {(user as any).role === "admin" && (
                       <Badge variant="secondary" className="w-fit mx-auto">
-                        {(user as any).role === "educator" ? "Doğrulanmış Eğitimci" : 
-                         (user as any).role === "admin" ? "Yönetici" : "Kullanıcı"}
+                        Yönetici
                       </Badge>
                     )}
 
@@ -186,7 +156,7 @@ export default function Profile() {
                           id="specialty"
                           value={editedSpecialty}
                           onChange={(e) => setEditedSpecialty(e.target.value)}
-                          placeholder="Örn: Matematik Öğretmeni"
+                          placeholder="Örn: Yazılım Geliştirici"
                           maxLength={100}
                           data-testid="input-specialty"
                         />
@@ -256,120 +226,93 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-            {stats && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    İstatistikler
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <p className="text-2xl font-bold">{(stats as any).totalContent}</p>
-                      <p className="text-xs text-muted-foreground">Toplam İçerik</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-2xl font-bold">{(stats as any).verifiedContent}</p>
-                      <p className="text-xs text-muted-foreground">Onaylı İçerik</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-2xl font-bold">{(stats as any).totalLikes}</p>
-                      <p className="text-xs text-muted-foreground">Toplam Beğeni</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-2xl font-bold">{(stats as any).totalComments}</p>
-                      <p className="text-xs text-muted-foreground">Yorum</p>
-                    </div>
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  İstatistikler
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-2xl font-bold">{(likedContent as any[]).length}</p>
+                    <p className="text-xs text-muted-foreground">Beğenilen</p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  <div className="space-y-1">
+                    <p className="text-2xl font-bold">{(bookmarkedContent as any[]).length}</p>
+                    <p className="text-xs text-muted-foreground">Kaydedilen</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>İçeriklerim</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {contentLoading ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    Yükleniyor...
-                  </div>
-                ) : userContent && (userContent as any).length > 0 ? (
-                  <div className="space-y-4">
-                    {(userContent as any).map((content: any) => (
-                      <Card 
-                        key={content.id} 
-                        className="hover-elevate cursor-pointer"
-                        onClick={() => setLocation(`/content/${content.id}`)}
-                        data-testid={`card-content-${content.id}`}
-                      >
-                        <CardHeader>
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                              <CardTitle className="text-lg mb-2">
-                                {content.title}
-                              </CardTitle>
-                              {content.excerpt && (
-                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                  {content.excerpt}
-                                </p>
-                              )}
-                            </div>
-                            <Badge 
-                              variant={
-                                content.verificationStatus === "verified" ? "default" :
-                                content.verificationStatus === "pending" ? "secondary" : 
-                                "destructive"
-                              }
-                              className="flex items-center gap-1 shrink-0"
-                            >
-                              {getStatusIcon(content.verificationStatus)}
-                              {getStatusText(content.verificationStatus)}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Heart className="h-4 w-4" />
-                              <span>{content.likeCount || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MessageCircle className="h-4 w-4" />
-                              <span>{content.commentCount || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1 ml-auto">
-                              <FileText className="h-4 w-4" />
-                              <span>
-                                {new Date(content.createdAt).toLocaleDateString('tr-TR', {
-                                  day: 'numeric',
-                                  month: 'long',
-                                  year: 'numeric'
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+            <Tabs defaultValue="liked" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="liked" className="flex items-center gap-2" data-testid="tab-liked">
+                  <Heart className="h-4 w-4" />
+                  Beğenilenler
+                </TabsTrigger>
+                <TabsTrigger value="saved" className="flex items-center gap-2" data-testid="tab-saved">
+                  <Bookmark className="h-4 w-4" />
+                  Kaydedilenler
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="liked" className="mt-6">
+                {likesLoading ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <p className="text-muted-foreground">Yükleniyor...</p>
+                    </CardContent>
+                  </Card>
+                ) : (likedContent as any[]).length > 0 ? (
+                  <div className="space-y-6">
+                    {(likedContent as any[]).map((content: any) => (
+                      <PostCard key={content.id} post={content} />
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <FileText className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                    <p className="text-lg mb-2">Henüz içerik paylaşmadınız</p>
-                    <p className="text-sm">
-                      {(user as any).role === "educator" 
-                        ? "İlk eğitim içeriğinizi oluşturarak başlayın."
-                        : "Eğitimci olmak için SheerID doğrulamasını tamamlayın."}
-                    </p>
-                  </div>
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <Heart className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+                      <h3 className="text-lg font-semibold mb-2">Henüz beğeni yok</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Beğendiğiniz içerikler burada görüntülenecek.
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
+              </TabsContent>
+
+              <TabsContent value="saved" className="mt-6">
+                {bookmarksLoading ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <p className="text-muted-foreground">Yükleniyor...</p>
+                    </CardContent>
+                  </Card>
+                ) : (bookmarkedContent as any[]).length > 0 ? (
+                  <div className="space-y-6">
+                    {(bookmarkedContent as any[]).map((content: any) => (
+                      <PostCard key={content.id} post={content} />
+                    ))}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <Bookmark className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+                      <h3 className="text-lg font-semibold mb-2">Henüz kayıt yok</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Kaydettiğiniz içerikler burada görüntülenecek.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

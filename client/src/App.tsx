@@ -10,6 +10,8 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import Bookmarks from "@/pages/Bookmarks";
+import Likes from "@/pages/Likes";
+import JarvisProfile from "@/pages/JarvisProfile";
 import Search from "@/pages/Search";
 import NotFound from "@/pages/not-found";
 
@@ -24,6 +26,8 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/settings" component={Settings} />
       <Route path="/bookmarks" component={Bookmarks} />
+      <Route path="/likes" component={Likes} />
+      <Route path="/jarvis" component={JarvisProfile} />
       <Route component={NotFound} />
     </Switch>
   );

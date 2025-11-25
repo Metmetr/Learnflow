@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Heart, MessageCircle, Share2, Bookmark, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,6 +8,11 @@ import { getTopicIcon } from "@/lib/topicIcons";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { socialAPI } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Post {
   id: string;
@@ -19,10 +24,9 @@ export interface Post {
     id: string;
     name: string;
     avatar?: string;
-    verified: boolean;
+    isBot?: boolean;
   };
   createdAt: string;
-  verificationStatus: "pending" | "verified" | "rejected";
   likes: number;
   comments: number;
   isLiked?: boolean;
@@ -31,39 +35,76 @@ export interface Post {
 
 interface PostCardProps {
   post: Post;
-  onLike?: (postId: string) => void;
-  onBookmark?: (postId: string) => void;
 }
 
-export default function PostCard({ post, onLike, onBookmark }: PostCardProps) {
+export default function PostCard({ post }: PostCardProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [liked, setLiked] = useState(post.isLiked || false);
   const [bookmarked, setBookmarked] = useState(post.isBookmarked || false);
   const [likeCount, setLikeCount] = useState(post.likes);
 
   const TopicIcon = getTopicIcon(post.topics[0]);
 
+  const likeMutation = useMutation({
+    mutationFn: () => liked ? socialAPI.unlike(post.id) : socialAPI.like(post.id),
+    onMutate: () => {
+      setLiked(!liked);
+      setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+    },
+    onError: () => {
+      setLiked(liked);
+      setLikeCount(likeCount);
+      toast({
+        title: "Hata",
+        description: "İşlem gerçekleştirilemedi.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/feed/personalized"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/likes/my"] });
+    },
+  });
+
+  const bookmarkMutation = useMutation({
+    mutationFn: () => bookmarked ? socialAPI.unbookmark(post.id) : socialAPI.bookmark(post.id),
+    onMutate: () => {
+      setBookmarked(!bookmarked);
+    },
+    onError: () => {
+      setBookmarked(bookmarked);
+      toast({
+        title: "Hata",
+        description: "İşlem gerçekleştirilemedi.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/content/bookmarks/my"] });
+    },
+  });
+
   const handleLike = () => {
-    setLiked(!liked);
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
-    onLike?.(post.id);
-    console.log("Like toggled:", post.id);
+    if (!user) {
+      toast({
+        title: "Giriş yapın",
+        description: "Beğeni yapmak için giriş yapmanız gerekiyor.",
+      });
+      return;
+    }
+    likeMutation.mutate();
   };
 
   const handleBookmark = () => {
-    setBookmarked(!bookmarked);
-    onBookmark?.(post.id);
-    console.log("Bookmark toggled:", post.id);
-  };
-
-  const getVerificationBadge = () => {
-    if (post.verificationStatus === "verified") {
-      return <CheckCircle2 className="h-4 w-4 text-primary" />;
-    } else if (post.verificationStatus === "pending") {
-      return <Clock className="h-4 w-4 text-yellow-500" />;
-    } else if (post.verificationStatus === "rejected") {
-      return <XCircle className="h-4 w-4 text-destructive" />;
+    if (!user) {
+      toast({
+        title: "Giriş yapın",
+        description: "Kaydetmek için giriş yapmanız gerekiyor.",
+      });
+      return;
     }
-    return null;
+    bookmarkMutation.mutate();
   };
 
   return (
@@ -76,24 +117,41 @@ export default function PostCard({ post, onLike, onBookmark }: PostCardProps) {
 
       <CardHeader className="gap-3 space-y-0 pb-3">
         <div className="flex items-start gap-3">
-          <Avatar className="h-12 w-12" data-testid={`avatar-${post.author.id}`}>
-            <AvatarImage src={post.author.avatar} alt={post.author.name} />
-            <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
-          </Avatar>
+          <Link href={post.author.isBot ? "/jarvis" : `/profile/${post.author.id}`}>
+            <Avatar className="h-12 w-12 cursor-pointer" data-testid={`avatar-${post.author.id}`}>
+              {post.author.isBot ? (
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  <Bot className="h-6 w-6" />
+                </AvatarFallback>
+              ) : (
+                <>
+                  <AvatarImage src={post.author.avatar} alt={post.author.name} />
+                  <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                </>
+              )}
+            </Avatar>
+          </Link>
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm truncate" data-testid={`text-author-${post.id}`}>
-                {post.author.name}
-              </span>
-              {post.author.verified && getVerificationBadge()}
+              <Link href={post.author.isBot ? "/jarvis" : `/profile/${post.author.id}`}>
+                <span className="font-semibold text-sm truncate hover:text-primary cursor-pointer" data-testid={`text-author-${post.id}`}>
+                  {post.author.name}
+                </span>
+              </Link>
+              {post.author.isBot && (
+                <Badge variant="secondary" className="text-xs gap-1">
+                  <Bot className="h-3 w-3" />
+                  AI
+                </Badge>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span data-testid={`text-time-${post.id}`}>
                 {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: tr })}
               </span>
               {post.topics.slice(0, 2).map((topic) => (
-                <Badge key={topic} variant="secondary" className="text-xs">
+                <Badge key={topic} variant="outline" className="text-xs">
                   {topic}
                 </Badge>
               ))}
@@ -132,6 +190,7 @@ export default function PostCard({ post, onLike, onBookmark }: PostCardProps) {
             size="sm"
             className={liked ? "text-red-500" : ""}
             onClick={handleLike}
+            disabled={likeMutation.isPending}
             data-testid={`button-like-${post.id}`}
           >
             <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
@@ -156,6 +215,7 @@ export default function PostCard({ post, onLike, onBookmark }: PostCardProps) {
             size="sm"
             className={bookmarked ? "text-primary" : ""}
             onClick={handleBookmark}
+            disabled={bookmarkMutation.isPending}
             data-testid={`button-bookmark-${post.id}`}
           >
             <Bookmark className={`h-4 w-4 ${bookmarked ? "fill-current" : ""}`} />

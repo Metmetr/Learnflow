@@ -5,9 +5,8 @@ import PostCard from "@/components/PostCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Home, Compass, Bookmark, PenSquare } from "lucide-react";
+import { Home, Compass, Bookmark, Bot, Heart } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { feedAPI } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Feed() {
@@ -35,6 +34,7 @@ export default function Feed() {
     { icon: Home, label: "Ana Sayfa", href: "/feed", active: location === "/feed" },
     { icon: Compass, label: "Keşfet", href: "/explore", active: location === "/explore" },
     { icon: Bookmark, label: "Kaydedilenler", href: "/bookmarks", active: location === "/bookmarks" },
+    { icon: Heart, label: "Beğenilenler", href: "/likes", active: location === "/likes" },
   ];
 
   return (
@@ -51,24 +51,13 @@ export default function Feed() {
                     <Button
                       variant={item.active ? "default" : "ghost"}
                       className="w-full justify-start gap-3"
-                      data-testid={`link-${item.label.toLowerCase()}`}
+                      data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                     >
                       <item.icon className="h-5 w-5" />
                       {item.label}
                     </Button>
                   </Link>
                 ))}
-
-                <Separator className="my-4" />
-
-                {user?.role === "educator" && (
-                  <Link href="/create">
-                    <Button variant="default" className="w-full gap-2" data-testid="button-create-content">
-                      <PenSquare className="h-4 w-4" />
-                      İçerik Oluştur
-                    </Button>
-                  </Link>
-                )}
               </CardContent>
             </Card>
           </aside>
@@ -109,8 +98,11 @@ export default function Feed() {
                   <CardContent className="p-8 text-center">
                     <h3 className="text-lg font-semibold mb-2">LearnFlow'a Hoş Geldiniz</h3>
                     <p className="text-muted-foreground mb-4">
-                      İçerikleri görmek için giriş yapın
+                      AI tarafından oluşturulan eğitim içeriklerini keşfedin
                     </p>
+                    <Button asChild data-testid="button-login-cta">
+                      <a href="/api/login">Giriş Yap</a>
+                    </Button>
                   </CardContent>
                 </Card>
               ) : isLoading ? (
@@ -122,7 +114,11 @@ export default function Feed() {
               ) : posts.length === 0 ? (
                 <Card>
                   <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">Henüz içerik yok</p>
+                    <Bot className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold mb-2">Henüz içerik yok</h3>
+                    <p className="text-muted-foreground">
+                      Jarvis yakında yeni içerikler paylaşacak!
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
@@ -143,10 +139,23 @@ export default function Feed() {
           <aside className="hidden lg:block lg:col-span-3">
             <Card className="sticky top-20">
               <CardContent className="p-4">
-                <h2 className="font-semibold mb-4" data-testid="heading-suggestions">
-                  Önerilen Eğitimciler
-                </h2>
-                <p className="text-sm text-muted-foreground">Yakında...</p>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Bot className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold" data-testid="heading-jarvis">Jarvis</h2>
+                    <p className="text-xs text-muted-foreground">AI İçerik Üreticisi</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Tüm içerikler Jarvis tarafından yapay zeka kullanılarak oluşturulmaktadır.
+                </p>
+                <Link href="/jarvis">
+                  <Button variant="outline" className="w-full" data-testid="link-jarvis-profile">
+                    Jarvis Profilini Gör
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </aside>

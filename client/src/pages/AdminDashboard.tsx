@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
+import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -14,152 +14,162 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CheckCircle2, XCircle, Clock, Users, FileText, Shield, TrendingUp } from "lucide-react";
-import educatorImage from "@assets/generated_images/Turkish_female_educator_portrait_f68f89da.png";
+import {
+  Users,
+  FileText,
+  Bot,
+  Heart,
+  MessageCircle,
+  AlertTriangle,
+  TrendingUp,
+  Trash2,
+} from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboard() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
-  // All hooks must be called before any conditional returns
-  const [pendingContent] = useState([
-    {
-      id: "1",
-      title: "Kuantum Fiziğine Giriş",
-      author: "Dr. Mehmet Yılmaz",
-      submittedAt: new Date(Date.now() - 3600000),
-      topics: ["Fizik"],
-      status: "pending" as const,
-    },
-    {
-      id: "2",
-      title: "Python ile Veri Analizi",
-      author: "Ayşe Kaya",
-      submittedAt: new Date(Date.now() - 7200000),
-      topics: ["Programlama"],
-      status: "pending" as const,
-    },
-  ]);
+  const { data: stats } = useQuery({
+    queryKey: ["/api/admin/stats"],
+    enabled: !!user && user.role === "admin",
+  });
 
-  const [sheeridVerifications] = useState([
-    {
-      id: "1",
-      userName: "Zeynep Demir",
-      email: "zeynep@example.com",
-      verificationId: "SID-12345",
-      status: "verified" as const,
-      submittedAt: new Date(Date.now() - 86400000),
-    },
-    {
-      id: "2",
-      userName: "Ahmet Öz",
-      email: "ahmet@example.com",
-      verificationId: "SID-12346",
-      status: "pending" as const,
-      submittedAt: new Date(Date.now() - 43200000),
-    },
-  ]);
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/admin/users"],
+    enabled: !!user && user.role === "admin",
+  });
 
-  useEffect(() => {
-    // Redirect non-admin users to home
-    if (!isLoading && (!user || (user as any).role !== "admin")) {
-      setLocation("/");
-    }
-  }, [user, isLoading, setLocation]);
+  const { data: content = [] } = useQuery({
+    queryKey: ["/api/admin/content"],
+    enabled: !!user && user.role === "admin",
+  });
 
-  // Show loading or nothing while checking auth
-  if (isLoading || !user || (user as any).role !== "admin") {
+  const { data: reports = [] } = useQuery({
+    queryKey: ["/api/admin/reports"],
+    enabled: !!user && user.role === "admin",
+  });
+
+  const deleteContentMutation = useMutation({
+    mutationFn: (id: string) => apiRequest(`/admin/content/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast({
+        title: "İçerik silindi",
+        description: "İçerik başarıyla silindi.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "İçerik silinirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resolveReportMutation = useMutation({
+    mutationFn: (id: string) => apiRequest(`/admin/reports/${id}/resolve`, { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/reports"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast({
+        title: "Rapor çözüldü",
+        description: "Rapor başarıyla çözüldü.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Rapor çözülürken bir hata oluştu.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (authLoading) {
     return null;
   }
 
-  const handleApprove = (id: string) => {
-    console.log("Approved content:", id);
-  };
-
-  const handleReject = (id: string) => {
-    console.log("Rejected content:", id);
-  };
-
-  const handleVerifyEducator = (id: string) => {
-    console.log("Verified educator:", id);
-  };
+  if (!user || user.role !== "admin") {
+    setLocation("/");
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b">
-        <div className="container max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">Yönetici Paneli</h1>
-        </div>
-      </div>
+      <Navbar />
 
       <div className="container max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Bekleyen İçerik</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-pending-content">
-                {pendingContent.length}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Toplam Kullanıcı</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-users">
-                2,543
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Doğrulanmış İçerik</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-verified-content">
-                1,284
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aktif Eğitimci</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-educators">
-                156
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex items-center gap-3 mb-8">
+          <TrendingUp className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold" data-testid="heading-admin">
+            Admin Paneli
+          </h1>
         </div>
 
-        <Tabs defaultValue="moderation" className="space-y-6">
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Users className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <p className="text-2xl font-bold" data-testid="stat-users">{(stats as any).totalUsers}</p>
+                <p className="text-xs text-muted-foreground">Kullanıcı</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <FileText className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <p className="text-2xl font-bold" data-testid="stat-content">{(stats as any).totalContent}</p>
+                <p className="text-xs text-muted-foreground">İçerik</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Bot className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <p className="text-2xl font-bold" data-testid="stat-jarvis">{(stats as any).jarvisContent}</p>
+                <p className="text-xs text-muted-foreground">Jarvis İçeriği</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Heart className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <p className="text-2xl font-bold" data-testid="stat-likes">{(stats as any).totalLikes}</p>
+                <p className="text-xs text-muted-foreground">Beğeni</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <MessageCircle className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <p className="text-2xl font-bold" data-testid="stat-comments">{(stats as any).totalComments}</p>
+                <p className="text-xs text-muted-foreground">Yorum</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-destructive" />
+                <p className="text-2xl font-bold" data-testid="stat-reports">{(stats as any).pendingReports}</p>
+                <p className="text-xs text-muted-foreground">Bekleyen Rapor</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <Tabs defaultValue="content" className="w-full">
           <TabsList>
-            <TabsTrigger value="moderation" data-testid="tab-moderation">
-              Moderasyon Kuyruğu
-            </TabsTrigger>
-            <TabsTrigger value="sheerid" data-testid="tab-sheerid">
-              SheerID Doğrulama
-            </TabsTrigger>
-            <TabsTrigger value="ml-demo" data-testid="tab-ml">
-              ML Demo
-            </TabsTrigger>
+            <TabsTrigger value="content" data-testid="tab-content">İçerikler</TabsTrigger>
+            <TabsTrigger value="users" data-testid="tab-users">Kullanıcılar</TabsTrigger>
+            <TabsTrigger value="reports" data-testid="tab-reports">Raporlar</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="moderation" className="space-y-4">
+          <TabsContent value="content" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Bekleyen İçerikler</CardTitle>
+                <CardTitle>Tüm İçerikler</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -167,168 +177,152 @@ export default function AdminDashboard() {
                     <TableRow>
                       <TableHead>Başlık</TableHead>
                       <TableHead>Yazar</TableHead>
-                      <TableHead>Konu</TableHead>
-                      <TableHead>Gönderim</TableHead>
-                      <TableHead>İşlemler</TableHead>
+                      <TableHead>Kaynak</TableHead>
+                      <TableHead>Tarih</TableHead>
+                      <TableHead>İşlem</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pendingContent.map((content) => (
-                      <TableRow key={content.id}>
-                        <TableCell className="font-medium" data-testid={`content-title-${content.id}`}>
-                          {content.title}
+                    {(content as any[]).map((item: any) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium max-w-[200px] truncate">
+                          {item.title}
                         </TableCell>
-                        <TableCell>{content.author}</TableCell>
+                        <TableCell>{item.authorName}</TableCell>
                         <TableCell>
-                          <div className="flex gap-1">
-                            {content.topics.map((topic) => (
-                              <Badge key={topic} variant="secondary" className="text-xs">
-                                {topic}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {content.submittedAt.toLocaleDateString("tr-TR")}
+                          <Badge variant={item.source === "jarvis" || item.source === "n8n" ? "default" : "secondary"}>
+                            {item.source === "jarvis" || item.source === "n8n" ? (
+                              <><Bot className="h-3 w-3 mr-1" /> Jarvis</>
+                            ) : (
+                              item.source
+                            )}
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => handleApprove(content.id)}
-                              data-testid={`button-approve-${content.id}`}
-                            >
-                              <CheckCircle2 className="mr-1 h-3 w-3" />
-                              Onayla
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleReject(content.id)}
-                              data-testid={`button-reject-${content.id}`}
-                            >
-                              <XCircle className="mr-1 h-3 w-3" />
-                              Reddet
-                            </Button>
-                          </div>
+                          {new Date(item.createdAt).toLocaleDateString('tr-TR')}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteContentMutation.mutate(item.id)}
+                            disabled={deleteContentMutation.isPending}
+                            data-testid={`button-delete-${item.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
+                    {(content as any[]).length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Henüz içerik yok
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="sheerid" className="space-y-4">
+          <TabsContent value="users" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>SheerID Doğrulama Logları</CardTitle>
+                <CardTitle>Kullanıcılar</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Kullanıcı</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Doğrulama ID</TableHead>
-                      <TableHead>Durum</TableHead>
-                      <TableHead>Tarih</TableHead>
-                      <TableHead>İşlemler</TableHead>
+                      <TableHead>Ad</TableHead>
+                      <TableHead>E-posta</TableHead>
+                      <TableHead>Rol</TableHead>
+                      <TableHead>Kayıt Tarihi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sheeridVerifications.map((verification) => (
-                      <TableRow key={verification.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={educatorImage} />
-                              <AvatarFallback>{verification.userName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            {verification.userName}
-                          </div>
-                        </TableCell>
-                        <TableCell>{verification.email}</TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {verification.verificationId}
+                    {(users as any[]).map((u: any) => (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-medium">{u.name}</TableCell>
+                        <TableCell>{u.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={u.role === "admin" ? "default" : "secondary"}>
+                            {u.role === "admin" ? "Yönetici" : "Kullanıcı"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                          {verification.status === "verified" ? (
-                            <Badge className="bg-green-500">
-                              <CheckCircle2 className="mr-1 h-3 w-3" />
-                              Doğrulandı
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">
-                              <Clock className="mr-1 h-3 w-3" />
-                              Bekliyor
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {verification.submittedAt.toLocaleDateString("tr-TR")}
-                        </TableCell>
-                        <TableCell>
-                          {verification.status === "pending" && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleVerifyEducator(verification.id)}
-                              data-testid={`button-verify-${verification.id}`}
-                            >
-                              Manuel Onayla
-                            </Button>
-                          )}
+                          {new Date(u.createdAt).toLocaleDateString('tr-TR')}
                         </TableCell>
                       </TableRow>
                     ))}
+                    {(users as any[]).length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                          Henüz kullanıcı yok
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="ml-demo" className="space-y-4">
+          <TabsContent value="reports" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>ML Sıralama Demo</CardTitle>
+                <CardTitle>İçerik Raporları</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  İçerik sıralaması için kullanılan ML algoritmasının görselleştirilmesi. 
-                  Skorlar: Doğrulama durumu (2 puan) + Konu eşleşmesi (1.5 puan) + 
-                  Popülerlik (1 puan) - Yaş cezası (0.01/gün)
-                </p>
-
-                <div className="space-y-3">
-                  {[
-                    { title: "Kuantum Fiziği", score: 4.2, verified: true, popularity: 0.8 },
-                    { title: "Python Temelleri", score: 3.9, verified: true, popularity: 0.6 },
-                    { title: "Osmanlı Tarihi", score: 2.1, verified: false, popularity: 0.4 },
-                  ].map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-4 p-4 border rounded-lg"
-                      data-testid={`ml-item-${idx}`}
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium">{item.title}</span>
-                          {item.verified && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                        </div>
-                        <div className="flex gap-4 text-xs text-muted-foreground">
-                          <span>Doğrulama: {item.verified ? "+2.0" : "0.0"}</span>
-                          <span>Popülerlik: +{item.popularity.toFixed(1)}</span>
-                          <span>Toplam: {item.score.toFixed(1)}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-2xl font-bold">{item.score.toFixed(1)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>İçerik</TableHead>
+                      <TableHead>Raporlayan</TableHead>
+                      <TableHead>Sebep</TableHead>
+                      <TableHead>Durum</TableHead>
+                      <TableHead>İşlem</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(reports as any[]).map((report: any) => (
+                      <TableRow key={report.id}>
+                        <TableCell className="font-medium max-w-[150px] truncate">
+                          {report.contentTitle}
+                        </TableCell>
+                        <TableCell>{report.reporterName}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{report.reason}</TableCell>
+                        <TableCell>
+                          <Badge variant={report.status === "pending" ? "destructive" : "default"}>
+                            {report.status === "pending" ? "Beklemede" : "Çözüldü"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {report.status === "pending" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => resolveReportMutation.mutate(report.id)}
+                              disabled={resolveReportMutation.isPending}
+                              data-testid={`button-resolve-${report.id}`}
+                            >
+                              Çöz
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(reports as any[]).length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Henüz rapor yok
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
