@@ -1,4 +1,3 @@
-
 import { Router, type Request, type Response } from "express";
 import { db } from "../db";
 import { content, users } from "@shared/schema";
@@ -7,20 +6,7 @@ import { z } from "zod";
 
 const router = Router();
 
-const JARVIS_API_KEY = process.env.N8N_API_KEY || "jarvis-development-key";
 const JARVIS_EMAIL = "jarvis@learnflow.com";
-console.log("BACKEND KEY:", process.env.N8N_API_KEY);
-function verifyJarvisKey(req: Request, res: Response, next: Function) {
-  const apiKey = req.headers["x-api-key"] || req.headers["x-n8n-key"];
-
-  if (!apiKey || apiKey !== JARVIS_API_KEY) {
-    return res.status(401).json({ error: "Invalid or missing API key" });
-  }
-
-  next();
-}
-
-router.use(verifyJarvisKey);
 
 const jarvisContentSchema = z.object({
   title: z.string().min(5),
