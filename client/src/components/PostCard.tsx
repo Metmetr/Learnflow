@@ -40,21 +40,32 @@ interface PostCardProps {
 export default function PostCard({ post }: PostCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [liked, setLiked] = useState(post.isLiked || false);
-  const [bookmarked, setBookmarked] = useState(post.isBookmarked || false);
+  const [liked, setLiked] = useState(post.isLiked ?? false);
+  const [bookmarked, setBookmarked] = useState(post.isBookmarked ?? false);
   const [likeCount, setLikeCount] = useState(post.likes);
 
   const TopicIcon = getTopicIcon(post.topics[0]);
 
   const likeMutation = useMutation({
-    mutationFn: () => liked ? socialAPI.unlike(post.id) : socialAPI.like(post.id),
-    onMutate: () => {
-      setLiked(!liked);
-      setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+    mutationFn: async (currentlyLiked: boolean) => {
+      if (currentlyLiked) {
+        return socialAPI.unlike(post.id);
+      } else {
+        return socialAPI.like(post.id);
+      }
     },
-    onError: () => {
-      setLiked(liked);
-      setLikeCount(likeCount);
+    onMutate: async (currentlyLiked: boolean) => {
+      const previousLiked = currentlyLiked;
+      const previousCount = likeCount;
+      setLiked(!currentlyLiked);
+      setLikeCount(currentlyLiked ? likeCount - 1 : likeCount + 1);
+      return { previousLiked, previousCount };
+    },
+    onError: (_error, _variables, context) => {
+      if (context) {
+        setLiked(context.previousLiked);
+        setLikeCount(context.previousCount);
+      }
       toast({
         title: "Hata",
         description: "İşlem gerçekleştirilemedi.",
@@ -64,16 +75,27 @@ export default function PostCard({ post }: PostCardProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/feed/personalized"] });
       queryClient.invalidateQueries({ queryKey: ["/api/content/likes/my"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
     },
   });
 
   const bookmarkMutation = useMutation({
-    mutationFn: () => bookmarked ? socialAPI.unbookmark(post.id) : socialAPI.bookmark(post.id),
-    onMutate: () => {
-      setBookmarked(!bookmarked);
+    mutationFn: async (currentlyBookmarked: boolean) => {
+      if (currentlyBookmarked) {
+        return socialAPI.unbookmark(post.id);
+      } else {
+        return socialAPI.bookmark(post.id);
+      }
     },
-    onError: () => {
-      setBookmarked(bookmarked);
+    onMutate: async (currentlyBookmarked: boolean) => {
+      const previousBookmarked = currentlyBookmarked;
+      setBookmarked(!currentlyBookmarked);
+      return { previousBookmarked };
+    },
+    onError: (_error, _variables, context) => {
+      if (context) {
+        setBookmarked(context.previousBookmarked);
+      }
       toast({
         title: "Hata",
         description: "İşlem gerçekleştirilemedi.",
@@ -82,6 +104,8 @@ export default function PostCard({ post }: PostCardProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/content/bookmarks/my"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/feed/personalized"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
     },
   });
 
@@ -93,7 +117,7 @@ export default function PostCard({ post }: PostCardProps) {
       });
       return;
     }
-    likeMutation.mutate();
+    likeMutation.mutate(liked);
   };
 
   const handleBookmark = () => {
@@ -104,7 +128,24 @@ export default function PostCard({ post }: PostCardProps) {
       });
       return;
     }
-    bookmarkMutation.mutate();
+    bookmarkMutation.mutate(bookmarked);
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/content/${post.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link kopyalandı",
+        description: "İçerik linki panoya kopyalandı.",
+      });
+    } catch {
+      toast({
+        title: "Hata",
+        description: "Link kopyalanamadı.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -206,7 +247,7 @@ export default function PostCard({ post }: PostCardProps) {
         </div>
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" data-testid={`button-share-${post.id}`}>
+          <Button variant="ghost" size="sm" onClick={handleShare} data-testid={`button-share-${post.id}`}>
             <Share2 className="h-4 w-4" />
           </Button>
 

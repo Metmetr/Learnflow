@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
-import PostCard from "@/components/PostCard";
+import PostCard, { type Post } from "@/components/PostCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart } from "lucide-react";
 
@@ -10,7 +10,7 @@ export default function Likes() {
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { data: likedContent = [], isLoading } = useQuery({
+  const { data: likedContent = [], isLoading } = useQuery<Post[]>({
     queryKey: ["/api/content/likes/my"],
     enabled: !!user,
   });

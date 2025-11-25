@@ -216,10 +216,11 @@ router.post("/comments", authenticateToken, async (req: AuthRequest, res: Respon
       authorId: req.user!.id,
     });
 
-    const [newComment] = await db
+    const insertResult = await db
       .insert(comments)
       .values(validatedData)
       .returning();
+    const newComment = (insertResult as any[])[0];
 
     // Get author info
     const [author] = await db
