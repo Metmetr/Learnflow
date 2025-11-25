@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Landing from "@/pages/Landing";
 import Feed from "@/pages/Feed";
+import Explore from "@/pages/Explore";
 import ContentDetail from "@/pages/ContentDetail";
 import AdminDashboard from "@/pages/AdminDashboard";
 import Profile from "@/pages/Profile";
@@ -20,6 +21,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/feed" component={Feed} />
+      <Route path="/explore" component={Explore} />
       <Route path="/search" component={Search} />
       <Route path="/content/:id" component={ContentDetail} />
       <Route path="/admin" component={AdminDashboard} />

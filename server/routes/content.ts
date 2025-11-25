@@ -122,6 +122,100 @@ router.get("/", optionalAuth, async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.get("/explore", optionalAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { sort = "popular", limit = "20", offset = "0" } = req.query;
+    const limitNum = parseInt(limit as string);
+    const offsetNum = parseInt(offset as string);
+
+    const orderBy = sort === "random" 
+      ? sql`RANDOM()` 
+      : desc(content.popularity);
+
+    const results = await db
+      .select({
+        id: content.id,
+        title: content.title,
+        excerpt: content.excerpt,
+        mediaUrl: content.mediaUrl,
+        topics: content.topics,
+        authorId: content.authorId,
+        authorName: users.name,
+        authorAvatar: users.avatar,
+        source: content.source,
+        createdAt: content.createdAt,
+        popularity: content.popularity,
+      })
+      .from(content)
+      .innerJoin(users, eq(content.authorId, users.id))
+      .orderBy(orderBy)
+      .limit(limitNum)
+      .offset(offsetNum);
+
+    const enrichedResults = await Promise.all(
+      results.map(async (item) => {
+        const likeResult = await db.execute(sql`
+          SELECT COUNT(*)::int as "likeCount"
+          FROM likes
+          WHERE content_id = ${item.id}
+        `);
+        const likeCount = (likeResult.rows[0] as any)?.likeCount ?? 0;
+
+        const commentResult = await db.execute(sql`
+          SELECT COUNT(*)::int as "commentCount"
+          FROM comments
+          WHERE content_id = ${item.id}
+        `);
+        const commentCount = (commentResult.rows[0] as any)?.commentCount ?? 0;
+
+        let isLiked = false;
+        let isBookmarked = false;
+        if (req.user) {
+          const likedResult = await db.execute(sql`
+            SELECT COUNT(*)::int as liked
+            FROM likes
+            WHERE content_id = ${item.id} AND user_id = ${req.user.id}
+          `);
+          isLiked = ((likedResult.rows[0] as any)?.liked ?? 0) > 0;
+
+          const bookmarkedResult = await db.execute(sql`
+            SELECT COUNT(*)::int as bookmarked
+            FROM bookmarks
+            WHERE content_id = ${item.id} AND user_id = ${req.user.id}
+          `);
+          isBookmarked = ((bookmarkedResult.rows[0] as any)?.bookmarked ?? 0) > 0;
+        }
+
+        const isJarvis = item.source === "jarvis" || item.source === "n8n";
+
+        return {
+          id: item.id,
+          title: item.title,
+          excerpt: item.excerpt,
+          mediaUrl: item.mediaUrl,
+          topics: item.topics,
+          author: {
+            id: item.authorId,
+            name: item.authorName,
+            avatar: item.authorAvatar,
+            isBot: isJarvis,
+          },
+          createdAt: item.createdAt,
+          likes: likeCount,
+          comments: commentCount,
+          isLiked,
+          isBookmarked,
+        };
+      })
+    );
+
+    res.json(enrichedResults);
+  } catch (error) {
+    console.error("Get explore content error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/:id", optionalAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
