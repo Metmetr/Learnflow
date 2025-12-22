@@ -29,14 +29,13 @@ export interface AuthRequest extends Request {
 
 export function setupAuth(app: Express) {
     const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 7 days
-    const pgStore = connectPg(session);
-
-    const sessionStore = new pgStore({
-        pool,
-        createTableIfMissing: false, // Table created via Drizzle schema to avoid permission issues
-        ttl: sessionTtl / 1000,
-        tableName: "sessions",
-    });
+    // Switch to MemoryStore (Safe Mode) to isolate Database/Pooler issues
+    // const sessionStore = new pgStore({
+    //     pool,
+    //     createTableIfMissing: false, 
+    //     ttl: sessionTtl / 1000,
+    //     tableName: "sessions",
+    // });
 
     app.set("trust proxy", 1);
     app.use(
@@ -44,7 +43,7 @@ export function setupAuth(app: Express) {
             secret: process.env.SESSION_SECRET || "super-secret-session-key",
             resave: false,
             saveUninitialized: false,
-            store: sessionStore,
+            store: new session.MemoryStore(), // Using MemoryStore to bypass Supabase Pooler incompatibility
             cookie: {
                 maxAge: sessionTtl,
                 httpOnly: true,
