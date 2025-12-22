@@ -14,7 +14,7 @@ export default function Feed() {
   const { user } = useAuth();
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
 
-  const { data: posts = [], isLoading } = useQuery({
+  const { data: posts = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/feed/personalized"],
     enabled: !!user,
   });
@@ -101,7 +101,7 @@ export default function Feed() {
                       AI tarafından oluşturulan eğitim içeriklerini keşfedin
                     </p>
                     <Button asChild data-testid="button-login-cta">
-                      <a href="/api/login">Giriş Yap</a>
+                      <Link href="/auth">Giriş Yap</Link>
                     </Button>
                   </CardContent>
                 </Card>
