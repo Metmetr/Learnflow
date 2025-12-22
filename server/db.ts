@@ -9,6 +9,8 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: true,
+  max: 1, // Use a single connection for serverless to avoid exhausting the pool
 });
 
 export const db = drizzle(pool, { schema });
