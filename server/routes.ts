@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
+import { pool } from "./db";
 import contentRoutes from "./routes/content";
 import socialRoutes from "./routes/social";
 import feedRoutes from "./routes/feed";
@@ -22,6 +23,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/user", userRoutes);
   app.use("/api/notifications", notificationsRoutes);
   app.use("/api/search", searchRoutes);
+
+  // Health check endpoint to verify DB connection
+  app.get("/api/health", async (req, res) => {
+    try {
+      const result = await pool.query("SELECT NOW()");
+      res.json({ status: "ok", time: result.rows[0].now, message: "Database connected successfully" });
+    } catch (err: any) {
+      console.error("Health Check Failed:", err);
+      res.status(500).json({ status: "error", message: err.message, stack: err.stack });
+    }
+  });
 
   const httpServer = createServer(app);
 
