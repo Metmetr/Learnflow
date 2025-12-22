@@ -1,7 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+
 
 const app = express();
 app.use(cookieParser());
@@ -44,7 +44,7 @@ app.use((req, res, next) => {
                 logLine = logLine.slice(0, 79) + "…";
             }
 
-            log(logLine);
+            console.log(logLine);
         }
     });
 
@@ -67,8 +67,10 @@ export async function createApp() {
     // setting up all the other routes so the catch-all route
     // doesn't interfere with the other routes
     if (app.get("env") === "development") {
+        const { setupVite, log } = await import("./vite");
         await setupVite(app, server);
     } else if (process.env.VERCEL !== '1') {
+        const { serveStatic } = await import("./vite");
         serveStatic(app);
     }
 
