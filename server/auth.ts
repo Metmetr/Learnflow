@@ -98,9 +98,10 @@ export function setupAuth(app: Express) {
                 console.log("[Auth] Login successful");
                 res.json(user);
             });
-        } catch (err) {
+        } catch (err: any) {
             console.error("[Auth] Registration Fatal Error:", err);
-            next(err);
+            // Return the specific error message to the client for debugging
+            res.status(500).json({ message: "Registration Error: " + (err.message || String(err)) });
         }
     });
 
