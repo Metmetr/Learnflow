@@ -1,13 +1,11 @@
-import { createApp } from "../server/app";
-
-// Cache the app instance
-let appPromise: Promise<{ app: any; server: any }> | null = null;
-
 // Global Error Trap for Vercel
+// CRITICAL: We use dynamic imports to catch top-level errors in dependencies (like missing modules)
 export default async function handler(req: any, res: any) {
     try {
         if (!appPromise) {
-            console.log("[Vercel] Initializing app...");
+            console.log("[Vercel] Initializing app (Dynamic Import)...");
+            // @ts-ignore
+            const { createApp } = await import("../server/app");
             appPromise = createApp();
         }
         const { app } = await appPromise;
