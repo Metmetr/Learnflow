@@ -29,14 +29,14 @@ export interface AuthRequest extends Request {
 
 export function setupAuth(app: Express) {
     const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 7 days
-    // const pgStore = connectPg(session);
+    const pgStore = connectPg(session);
 
-    // const sessionStore = new pgStore({
-    //     pool,
-    //     createTableIfMissing: false, // Table created via Drizzle schema to avoid permission issues
-    //     ttl: sessionTtl / 1000,
-    //     tableName: "sessions",
-    // });
+    const sessionStore = new pgStore({
+        pool,
+        createTableIfMissing: false, // Table created via Drizzle schema to avoid permission issues
+        ttl: sessionTtl / 1000,
+        tableName: "sessions",
+    });
 
     app.set("trust proxy", 1);
     app.use(
@@ -44,7 +44,7 @@ export function setupAuth(app: Express) {
             secret: process.env.SESSION_SECRET || "super-secret-session-key",
             resave: false,
             saveUninitialized: false,
-            store: new session.MemoryStore(), // Temporary fix: Use MemoryStore to unblock registration
+            store: sessionStore,
             cookie: {
                 maxAge: sessionTtl,
                 httpOnly: true,
