@@ -1,100 +1,19 @@
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import { Express, Request, Response, NextFunction } from "express";
-import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { storage } from "./storage";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+import { pool } from "./db";
 
-const scryptAsync = promisify(scrypt);
-
-export async function hashPassword(password: string) {
-    const salt = randomBytes(16).toString("hex");
-    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-    return `${buf.toString("hex")}.${salt}`;
-}
-
-export async function comparePasswords(supplied: string, stored: string) {
-    const [hashed, salt] = stored.split(".");
-    const hashedPasswordBuf = Buffer.from(hashed, "hex");
-    const suppliedPasswordBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
-}
-
-export interface AuthRequest extends Request {
-    user?: any;
-}
+// ... (imports)
 
 export function setupAuth(app: Express) {
     const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 7 days
     const pgStore = connectPg(session);
 
-    if (!process.env.DATABASE_URL) {
-        throw new Error("DATABASE_URL is required for session storage");
-    }
-
     const sessionStore = new pgStore({
-        conString: process.env.DATABASE_URL,
+        pool, // Reuse existing pool
         createTableIfMissing: true,
-        ttl: sessionTtl / 1000, // connect-pg-simple expects seconds
+        ttl: sessionTtl / 1000,
         tableName: "sessions",
     });
 
-    app.set("trust proxy", 1);
-    app.use(
-        session({
-            secret: process.env.SESSION_SECRET || "super-secret-session-key",
-            resave: false,
-            saveUninitialized: false,
-            store: sessionStore,
-            cookie: {
-                maxAge: sessionTtl,
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-            },
-        })
-    );
-
-    app.use(passport.initialize());
-    app.use(passport.session());
-
-    passport.use(
-        new LocalStrategy(
-            { usernameField: "email" },
-            async (email, password, done) => {
-                try {
-                    const user = await storage.getUserByEmail(email);
-                    if (!user || !user.password) {
-                        return done(null, false, { message: "Invalid email or password" });
-                    }
-
-                    const isValid = await comparePasswords(password, user.password);
-                    if (!isValid) {
-                        return done(null, false, { message: "Invalid email or password" });
-                    }
-
-                    return done(null, user);
-                } catch (err) {
-                    return done(err);
-                }
-            }
-        )
-    );
-
-    passport.serializeUser((user: any, done) => {
-        done(null, user.id);
-    });
-
-    passport.deserializeUser(async (id: string, done) => {
-        try {
-            const user = await storage.getUser(id);
-            done(null, user);
-        } catch (err) {
-            done(err);
-        }
-    });
+    // ... (rest of setup)
 
     // Auth Routes
     app.post("/api/register", async (req, res, next) => {
@@ -120,10 +39,14 @@ export function setupAuth(app: Express) {
             });
 
             req.login(user, (err) => {
-                if (err) return next(err);
+                if (err) {
+                    console.error("Login Error after Register:", err);
+                    return next(err);
+                }
                 res.json(user);
             });
         } catch (err) {
+            console.error("Registration Error:", err);
             next(err);
         }
     });
