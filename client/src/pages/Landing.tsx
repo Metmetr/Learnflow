@@ -138,10 +138,10 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
               <Button size="lg" asChild data-testid="button-start-learning">
-                <a href="/api/login">
+                <Link href="/auth">
                   <Sparkles className="mr-2 h-5 w-5" />
                   Hemen Başla
-                </a>
+                </Link>
               </Button>
               <Button size="lg" variant="outline" asChild data-testid="button-explore">
                 <Link href="/jarvis">Jarvis'i Tanı</Link>
