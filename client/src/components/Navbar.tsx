@@ -21,15 +21,15 @@ interface NavbarProps {
 }
 
 export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) {
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [searchValue, setSearchValue] = useState("");
   const [, setLocation] = useLocation();
-  
+
   const { data: unreadData } = useQuery<{ count: number }>({
     queryKey: ["/api/notifications/unread-count"],
     enabled: !!user,
   });
-  
+
   const notificationCount = unreadData?.count || 0;
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -129,17 +129,15 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <a href="/api/logout" data-testid="button-logout">
-                      Çıkış Yap
-                    </a>
+                  <DropdownMenuItem onClick={() => logoutMutation.mutate()} className="cursor-pointer" data-testid="button-logout">
+                    Çıkış Yap
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
             <Button asChild data-testid="button-login">
-              <a href="/api/login">Giriş Yap</a>
+              <Link href="/auth">Giriş Yap</Link>
             </Button>
           )}
         </div>
