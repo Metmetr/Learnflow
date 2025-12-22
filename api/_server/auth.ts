@@ -73,6 +73,11 @@ export function setupAuth(app: Express) {
                     return done(null, false, { message: "Invalid email or password" });
                 }
 
+                // Safely handle nullable password
+                if (!user.password) {
+                    return done(null, false, { message: "Account setup incomplete" });
+                }
+
                 const isValid = await comparePasswords(password, user.password);
                 if (!isValid) {
                     return done(null, false, { message: "Invalid email or password" });
@@ -86,7 +91,7 @@ export function setupAuth(app: Express) {
     );
 
     passport.serializeUser((user: any, done) => done(null, user.id));
-    passport.deserializeUser(async (id: number, done) => {
+    passport.deserializeUser(async (id: string, done) => {
         try {
             const user = await storage.getUser(id);
             done(null, user);

@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { db } from "../db";
 import { content, users } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { isAuthenticated as authenticateToken, optionalAuth, requireRole, type AuthRequest } from "../replitAuth";
+import { isAuthenticated as authenticateToken, optionalAuth, requireRole, type AuthRequest } from "../auth";
 
 const router = Router();
 
@@ -128,8 +128,8 @@ router.get("/explore", optionalAuth, async (req: AuthRequest, res: Response) => 
     const limitNum = parseInt(limit as string);
     const offsetNum = parseInt(offset as string);
 
-    const orderBy = sort === "random" 
-      ? sql`RANDOM()` 
+    const orderBy = sort === "random"
+      ? sql`RANDOM()`
       : desc(content.popularity);
 
     const results = await db

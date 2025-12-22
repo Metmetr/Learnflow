@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { db } from "../db";
 import { likes, bookmarks, comments, reports, users, notifications, content } from "@shared/schema";
 import { eq, and, desc, sql, isNull } from "drizzle-orm";
-import { isAuthenticated as authenticateToken, type AuthRequest } from "../replitAuth";
+import { isAuthenticated as authenticateToken, type AuthRequest } from "../auth";
 import {
   insertLikeSchema,
   insertBookmarkSchema,

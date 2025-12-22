@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { db } from "../db";
 import { content, users } from "@shared/schema";
 import { eq, desc, sql } from "drizzle-orm";
-import { isAuthenticated as authenticateToken, type AuthRequest } from "../replitAuth";
+import { isAuthenticated as authenticateToken, type AuthRequest } from "../auth";
 import { storage } from "../storage";
 import { z } from "zod";
 
@@ -17,7 +17,7 @@ router.put("/profile", authenticateToken, async (req: AuthRequest, res: Response
   try {
     const userId = req.user!.id;
     const validated = updateProfileSchema.parse(req.body);
-    
+
     const updatedUser = await storage.updateUserProfile(userId, validated);
     res.json(updatedUser);
   } catch (error) {
@@ -32,7 +32,7 @@ router.put("/profile", authenticateToken, async (req: AuthRequest, res: Response
 router.get("/content", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    
+
     const userContent = await db
       .select({
         id: content.id,
@@ -80,7 +80,7 @@ router.get("/content", authenticateToken, async (req: AuthRequest, res: Response
 router.get("/stats", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    
+
     const totalContentResult = await db.execute<{ totalContent: number }>(sql`
       SELECT COUNT(*)::int as "totalContent"
       FROM content

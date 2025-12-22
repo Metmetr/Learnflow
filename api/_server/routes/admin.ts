@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { db } from "../db";
 import { content, users, reports } from "@shared/schema";
 import { eq, desc, sql } from "drizzle-orm";
-import { isAuthenticated as authenticateToken, requireRole, type AuthRequest } from "../replitAuth";
+import { isAuthenticated as authenticateToken, requireRole, type AuthRequest } from "../auth";
 
 const router = Router();
 

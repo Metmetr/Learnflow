@@ -2,14 +2,14 @@ import { Router, type Response } from "express";
 import { db } from "../db";
 import { notifications } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { isAuthenticated as authenticateToken, type AuthRequest } from "../replitAuth";
+import { isAuthenticated as authenticateToken, type AuthRequest } from "../auth";
 
 const router = Router();
 
 router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    
+
     const userNotifications = await db
       .select()
       .from(notifications)
@@ -27,7 +27,7 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
 router.get("/unread-count", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    
+
     const unreadNotifications = await db
       .select()
       .from(notifications)
@@ -47,7 +47,7 @@ router.patch("/:id/read", authenticateToken, async (req: AuthRequest, res: Respo
   try {
     const userId = req.user!.id;
     const notificationId = req.params.id;
-    
+
     const [updated] = await db
       .update(notifications)
       .set({ read: true })
@@ -71,7 +71,7 @@ router.patch("/:id/read", authenticateToken, async (req: AuthRequest, res: Respo
 router.patch("/read-all", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    
+
     await db
       .update(notifications)
       .set({ read: true })
