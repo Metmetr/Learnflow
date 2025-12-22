@@ -9,7 +9,7 @@ export default async function handler(req: any, res: any) {
         if (!appPromise) {
             console.log("[Vercel] Initializing app (Dynamic Import)...");
             // @ts-ignore
-            const { createApp } = await import("../server/app");
+            const { createApp } = await import("./_server/app");
             appPromise = createApp();
         }
         const { app } = await appPromise;
