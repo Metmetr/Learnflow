@@ -9,7 +9,7 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: true,
+  ssl: { rejectUnauthorized: false },
   max: 1, // Use a single connection for serverless to avoid exhausting the pool
 });
 
