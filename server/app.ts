@@ -68,7 +68,7 @@ export async function createApp() {
     // doesn't interfere with the other routes
     if (app.get("env") === "development") {
         await setupVite(app, server);
-    } else {
+    } else if (process.env.VERCEL !== '1') {
         serveStatic(app);
     }
 
