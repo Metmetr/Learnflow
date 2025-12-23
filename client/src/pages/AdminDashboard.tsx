@@ -36,21 +36,25 @@ export default function AdminDashboard() {
   const { data: stats } = useQuery({
     queryKey: ["/api/admin/stats"],
     enabled: !!user && user.role === "admin",
+    refetchInterval: 3000,
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ["/api/admin/users"],
     enabled: !!user && user.role === "admin",
+    refetchInterval: 3000,
   });
 
   const { data: content = [] } = useQuery({
     queryKey: ["/api/admin/content"],
     enabled: !!user && user.role === "admin",
+    refetchInterval: 3000,
   });
 
   const { data: reports = [] } = useQuery({
     queryKey: ["/api/admin/reports"],
     enabled: !!user && user.role === "admin",
+    refetchInterval: 3000,
   });
 
   const deleteContentMutation = useMutation({

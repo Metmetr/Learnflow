@@ -17,6 +17,7 @@ export default function Feed() {
   const { data: posts = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/feed/personalized"],
     enabled: !!user,
+    refetchInterval: 5000,
   });
 
   const topics = [
