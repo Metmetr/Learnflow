@@ -121,42 +121,42 @@ export default function AdminDashboard() {
             <Card>
               <CardContent className="p-4 text-center">
                 <Users className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <p className="text-2xl font-bold" data-testid="stat-users">{(stats as any)?.totalUsers}</p>
+                <p className="text-2xl font-bold" data-testid="stat-users">{Number((stats as any)?.totalUsers || 0)}</p>
                 <p className="text-xs text-muted-foreground">Kullanıcı</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
                 <FileText className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <p className="text-2xl font-bold" data-testid="stat-content">{(stats as any)?.totalContent}</p>
+                <p className="text-2xl font-bold" data-testid="stat-content">{Number((stats as any)?.totalContent || 0)}</p>
                 <p className="text-xs text-muted-foreground">İçerik</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
                 <Bot className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <p className="text-2xl font-bold" data-testid="stat-jarvis">{(stats as any)?.jarvisContent}</p>
+                <p className="text-2xl font-bold" data-testid="stat-jarvis">{Number((stats as any)?.jarvisContent || 0)}</p>
                 <p className="text-xs text-muted-foreground">Jarvis İçeriği</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
                 <Heart className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <p className="text-2xl font-bold" data-testid="stat-likes">{(stats as any)?.totalLikes}</p>
+                <p className="text-2xl font-bold" data-testid="stat-likes">{Number((stats as any)?.totalLikes || 0)}</p>
                 <p className="text-xs text-muted-foreground">Beğeni</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
                 <MessageCircle className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <p className="text-2xl font-bold" data-testid="stat-comments">{(stats as any)?.totalComments}</p>
+                <p className="text-2xl font-bold" data-testid="stat-comments">{Number((stats as any)?.totalComments || 0)}</p>
                 <p className="text-xs text-muted-foreground">Yorum</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
                 <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-destructive" />
-                <p className="text-2xl font-bold" data-testid="stat-reports">{(stats as any)?.pendingReports}</p>
+                <p className="text-2xl font-bold" data-testid="stat-reports">{Number((stats as any)?.pendingReports || 0)}</p>
                 <p className="text-xs text-muted-foreground">Bekleyen Rapor</p>
               </CardContent>
             </Card>

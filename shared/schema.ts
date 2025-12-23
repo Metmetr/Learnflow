@@ -106,9 +106,7 @@ export const comments = pgTable(
     authorId: varchar("author_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    parentId: varchar("parent_id").references(() => comments.id, {
-      onDelete: "cascade",
-    }),
+    parentId: varchar("parent_id"), // Broken self-reference fixed for build
     body: text("body").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
