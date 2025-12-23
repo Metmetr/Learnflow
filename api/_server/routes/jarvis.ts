@@ -45,6 +45,14 @@ async function getOrCreateJarvis() {
 
 router.post("/post", async (req: Request, res: Response) => {
   try {
+    // API Check for n8n/Automation
+    const apiKey = req.headers["x-api-key"];
+    const expectedKey = process.env.JARVIS_SECRET_KEY;
+
+    if (!expectedKey || apiKey !== expectedKey) {
+      return res.status(401).json({ error: "Invalid or missing x-api-key header" });
+    }
+
     const validatedData = jarvisContentSchema.parse(req.body);
     const { title, summary, body, topic, mediaUrl, tags, type } = validatedData;
 
