@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "../db";
-import { content, users } from "@shared/schema";
+import { content, users } from "../../../shared/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 

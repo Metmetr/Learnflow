@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, content } from "@shared/schema";
+import { users, content } from "../../shared/schema";
 import bcrypt from "bcrypt";
 
 async function seed() {
@@ -38,7 +38,7 @@ async function seed() {
 
   // Create sample regular users for testing
   const userPassword = await bcrypt.hash("user123", 10);
-  
+
   await db.insert(users).values([
     {
       email: "can.yilmaz@example.com",

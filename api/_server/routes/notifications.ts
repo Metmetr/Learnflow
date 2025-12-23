@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
 import { db } from "../db";
-import { notifications } from "@shared/schema";
+import { notifications } from "../../../shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { isAuthenticated as authenticateToken, type AuthRequest } from "../auth";
 

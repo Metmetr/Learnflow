@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
 import { db } from "../db";
-import { likes, bookmarks, comments, reports, users, notifications, content } from "@shared/schema";
+import { likes, bookmarks, comments, reports, users, notifications, content } from "../../../shared/schema";
 import { eq, and, desc, sql, isNull } from "drizzle-orm";
 import { isAuthenticated as authenticateToken, type AuthRequest } from "../auth";
 import {
@@ -8,7 +8,7 @@ import {
   insertBookmarkSchema,
   insertCommentSchema,
   insertReportSchema,
-} from "@shared/schema";
+} from "../../../shared/schema";
 import { z } from "zod";
 
 const router = Router();
