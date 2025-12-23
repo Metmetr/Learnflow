@@ -26,9 +26,7 @@ export default function NotificationsPopover({ unreadCount }: NotificationsPopov
 
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      await apiRequest(`/api/notifications/${notificationId}/read`, {
-        method: "PATCH",
-      });
+      await apiRequest("PATCH", `/api/notifications/${notificationId}/read`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
@@ -38,9 +36,7 @@ export default function NotificationsPopover({ unreadCount }: NotificationsPopov
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("/api/notifications/read-all", {
-        method: "PATCH",
-      });
+      await apiRequest("PATCH", "/api/notifications/read-all");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
@@ -112,9 +108,8 @@ export default function NotificationsPopover({ unreadCount }: NotificationsPopov
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <div
-                        className={`flex gap-3 p-4 transition-colors hover-elevate active-elevate-2 ${
-                          !notification.read ? "bg-accent/50" : ""
-                        }`}
+                        className={`flex gap-3 p-4 transition-colors hover-elevate active-elevate-2 ${!notification.read ? "bg-accent/50" : ""
+                          }`}
                         data-testid={`notification-${notification.id}`}
                       >
                         <div className="flex-1 space-y-1">
@@ -140,9 +135,8 @@ export default function NotificationsPopover({ unreadCount }: NotificationsPopov
                     </Link>
                   ) : (
                     <div
-                      className={`flex gap-3 p-4 ${
-                        !notification.read ? "bg-accent/50" : ""
-                      }`}
+                      className={`flex gap-3 p-4 ${!notification.read ? "bg-accent/50" : ""
+                        }`}
                       data-testid={`notification-${notification.id}`}
                     >
                       <div className="flex-1 space-y-1">
