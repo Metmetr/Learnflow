@@ -60,7 +60,11 @@ router.post("/post", async (req: Request, res: Response) => {
         debug: {
           received_key: apiKey,
           is_env_var_set: !!expectedKey,
-          env_var_length: expectedKey ? expectedKey.length : 0
+          env_var_length: expectedKey ? expectedKey.length : 0,
+          // GUCTION: List environment keys to see what is loaded
+          available_env_keys: Object.keys(process.env).filter(k => !k.includes("SECRET") && !k.includes("KEY") && !k.includes("PASSWORD")),
+          has_database_url: !!process.env.DATABASE_URL,
+          node_env: process.env.NODE_ENV
         }
       });
     }
