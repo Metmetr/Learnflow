@@ -46,7 +46,7 @@ async function getOrCreateJarvis() {
 router.post("/post", async (req: Request, res: Response) => {
   try {
     // API Check for n8n/Automation
-    const apiKey = req.headers["x-api-key"];
+    const apiKey = req.headers["x-api-key"] || req.query["x-api-key"];
     const expectedKey = process.env.JARVIS_SECRET_KEY;
 
     if (!expectedKey || apiKey !== expectedKey) {
