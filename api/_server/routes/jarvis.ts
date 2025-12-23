@@ -50,7 +50,19 @@ router.post("/post", async (req: Request, res: Response) => {
     const expectedKey = process.env.JARVIS_SECRET_KEY;
 
     if (!expectedKey || apiKey !== expectedKey) {
-      return res.status(401).json({ error: "Invalid or missing x-api-key header" });
+      console.log("Jarvis Auth Failed:", {
+        received: apiKey,
+        expectedSet: !!expectedKey,
+        expectedLength: expectedKey?.length
+      });
+      return res.status(401).json({
+        error: "Invalid or missing x-api-key header",
+        debug: {
+          received_key: apiKey,
+          is_env_var_set: !!expectedKey,
+          env_var_length: expectedKey ? expectedKey.length : 0
+        }
+      });
     }
 
     const validatedData = jarvisContentSchema.parse(req.body);
