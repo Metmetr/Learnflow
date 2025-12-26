@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export function useAuth() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const { data: user, error, isLoading } = useQuery({
     queryKey: ["/api/user"],
@@ -72,6 +74,7 @@ export function useAuth() {
         title: "Çıkış Yapıldı",
         description: "Görüşmek üzere!",
       });
+      setLocation("/auth");
     },
     onError: (error: Error) => {
       toast({
