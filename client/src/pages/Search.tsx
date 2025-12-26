@@ -20,7 +20,8 @@ interface SearchResult {
 
 export default function Search() {
   const [location] = useLocation();
-  const params = new URLSearchParams(location.split("?")[1] || "");
+  // wouter location pathname döndürdüğü için query string'i window.location'dan alıyoruz
+  const params = new URLSearchParams(window.location.search);
   const query = params.get("q") || "";
 
   const { data: results = [], isLoading } = useQuery<SearchResult[]>({
