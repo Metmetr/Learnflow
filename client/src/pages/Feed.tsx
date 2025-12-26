@@ -1,38 +1,62 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import PostCard from "@/components/PostCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Home, Compass, Bookmark, Bot, Heart } from "lucide-react";
+import { Home, Compass, Bookmark, Bot, Heart, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Feed() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user } = useAuth();
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+
+  // URL'den topic parametresini al
+  const searchParams = new URLSearchParams(window.location.search);
+  const topicParam = searchParams.get("topic");
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(topicParam);
+
+  // URL değişince state'i güncelle (Geri/İleri navigasyon için)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setSelectedTopic(params.get("topic"));
+  }, [window.location.search]);
+
+  // Konu seçilince URL'i güncelle
+  const handleTopicSelect = (topic: string | null) => {
+    setSelectedTopic(topic);
+    if (topic) {
+      setLocation(`/feed?topic=${encodeURIComponent(topic)}`);
+    } else {
+      setLocation("/feed");
+    }
+  };
 
   const { data: posts = [], isLoading } = useQuery<any[]>({
-    queryKey: ["/api/feed/personalized"],
-    enabled: !!user,
-    refetchInterval: 5000,
+    queryKey: ["/api/feed/personalized", selectedTopic], // Topic değişince refetch yap
+    queryFn: async () => {
+      // Eğer konu seçiliyse filtreli getir, yoksa kişiselleştirilmiş (veya genel) akış
+      const url = selectedTopic
+        ? `/api/content?topic=${encodeURIComponent(selectedTopic)}`
+        : "/api/feed/personalized";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Network response was not ok");
+      return res.json();
+    },
+    enabled: !!user || !!selectedTopic, // User yoksa bile topic varsa çek
   });
 
-  const topics = [
-    "Matematik",
-    "Fizik",
-    "Kimya",
-    "Biyoloji",
-    "Tarih",
-    "Coğrafya",
-    "Programlama",
-    "Kişisel Gelişim",
-  ];
+  // Dinamik Konu Listesi
+  const { data: topicsData = [] } = useQuery<any[]>({
+    queryKey: ["/api/content/topics"],
+  });
+
+  const uniqueTopics = topicsData.map((t: any) => t.topic);
 
   const navItems = [
-    { icon: Home, label: "Ana Sayfa", href: "/feed", active: location === "/feed" },
+    { icon: Home, label: "Ana Sayfa", href: "/feed", active: location === "/feed" && !selectedTopic },
     { icon: Compass, label: "Keşfet", href: "/explore", active: location === "/explore" },
     { icon: Bookmark, label: "Kaydedilenler", href: "/bookmarks", active: location === "/bookmarks" },
     { icon: Heart, label: "Beğenilenler", href: "/likes", active: location === "/likes" },
@@ -73,17 +97,17 @@ export default function Feed() {
                   <Button
                     variant={selectedTopic === null ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setSelectedTopic(null)}
+                    onClick={() => handleTopicSelect(null)}
                     data-testid="button-topic-all"
                   >
                     Tümü
                   </Button>
-                  {topics.map((topic) => (
+                  {uniqueTopics.map((topic) => (
                     <Button
                       key={topic}
                       variant={selectedTopic === topic ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setSelectedTopic(topic)}
+                      onClick={() => handleTopicSelect(topic)}
                       data-testid={`button-topic-${topic.toLowerCase()}`}
                     >
                       {topic}
@@ -94,7 +118,7 @@ export default function Feed() {
             </Card>
 
             <div className="space-y-6">
-              {!user ? (
+              {!user && !selectedTopic ? (
                 <Card>
                   <CardContent className="p-8 text-center">
                     <h3 className="text-lg font-semibold mb-2">LearnFlow'a Hoş Geldiniz</h3>
@@ -109,7 +133,8 @@ export default function Feed() {
               ) : isLoading ? (
                 <Card>
                   <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">İçerikler yükleniyor...</p>
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                    <p className="text-muted-foreground mt-2">İçerikler yükleniyor...</p>
                   </CardContent>
                 </Card>
               ) : posts.length === 0 ? (
@@ -118,21 +143,17 @@ export default function Feed() {
                     <Bot className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <h3 className="text-lg font-semibold mb-2">Henüz içerik yok</h3>
                     <p className="text-muted-foreground">
-                      Jarvis yakında yeni içerikler paylaşacak!
+                      {selectedTopic ? `"${selectedTopic}" konusunda henüz içerik bulunamadı.` : "Jarvis yakında yeni içerikler paylaşacak!"}
                     </p>
                   </CardContent>
                 </Card>
               ) : (
-                posts
-                  .filter((post: any) =>
-                    selectedTopic ? post.topics.includes(selectedTopic) : true
-                  )
-                  .map((post: any) => (
-                    <PostCard
-                      key={post.id}
-                      post={post}
-                    />
-                  ))
+                posts.map((post: any) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                  />
+                ))
               )}
             </div>
           </main>

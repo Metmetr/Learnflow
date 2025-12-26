@@ -6,6 +6,22 @@ import { isAuthenticated as authenticateToken, optionalAuth, requireRole, type A
 
 const router = Router();
 
+router.get("/topics", optionalAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT unnest(topics) as topic, count(*) as count
+      FROM content
+      GROUP BY topic
+      ORDER BY count DESC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get topics error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/", optionalAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { topic, limit = "20", offset = "0" } = req.query;

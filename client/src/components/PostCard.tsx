@@ -193,9 +193,11 @@ export default function PostCard({ post }: PostCardProps) {
                 {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: tr })}
               </span>
               {post.topics.slice(0, 2).map((topic) => (
-                <Badge key={topic} variant="outline" className="text-xs">
-                  {topic}
-                </Badge>
+                <Link key={topic} href={`/feed?topic=${encodeURIComponent(topic)}`}>
+                  <Badge variant="outline" className="text-xs hover:bg-secondary cursor-pointer">
+                    {topic}
+                  </Badge>
+                </Link>
               ))}
             </div>
           </div>
