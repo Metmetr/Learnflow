@@ -8,15 +8,18 @@ import PostCard from "@/components/PostCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Bot, Sparkles, BookOpen, TrendingUp } from "lucide-react";
+import LockedContent from "@/components/LockedContent";
 
 export default function Landing() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
 
+  /*
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["/api/content"],
   });
+  */
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -24,13 +27,20 @@ export default function Landing() {
     }
   }, [user, isLoading, setLocation]);
 
+  /*
   const filteredPosts = selectedTopic
     ? (posts as any[]).filter((post: any) => post.topics?.includes(selectedTopic))
     : (posts as any[]).slice(0, 6);
+  */
 
   const handleTopicSelect = (topic: string) => {
-    setSelectedTopic(topic === selectedTopic ? null : topic);
+    // If not logged in, redirect to auth with topic intent (optional enhancement)
+    // or just scroll to locked content
+    const element = document.getElementById('locked-content');
+    if (element) element.scrollIntoView({ behavior: 'smooth' });
   };
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,45 +93,17 @@ export default function Landing() {
           </Card>
         </section>
 
-        <section className="space-y-6">
+        <section className="space-y-6" id="locked-content">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Sparkles className="h-6 w-6 text-primary" />
               <h2 className="text-2xl font-bold" data-testid="heading-featured">
-                {selectedTopic ? `${selectedTopic} İçerikleri` : "Jarvis'ten Son İçerikler"}
+                Neler Öğrenebilirsin?
               </h2>
             </div>
-            <Button variant="ghost" asChild data-testid="button-view-all">
-              <Link href="/feed">Tümünü Gör</Link>
-            </Button>
           </div>
 
-          {postsLoading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i} className="h-64 animate-pulse bg-muted/50" />
-              ))}
-            </div>
-          ) : filteredPosts.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredPosts.map((post: any) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Bot className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-xl font-semibold mb-2">Henüz içerik yok</h3>
-                <p className="text-muted-foreground mb-6">
-                  Jarvis yakında yeni içerikler paylaşmaya başlayacak!
-                </p>
-                <Button asChild data-testid="button-explore-cta">
-                  <Link href="/feed">Akışı Keşfet</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <LockedContent />
         </section>
 
         <section className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-8 md:p-12">
