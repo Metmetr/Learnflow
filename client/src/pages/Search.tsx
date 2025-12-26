@@ -25,6 +25,11 @@ export default function Search() {
 
   const { data: results = [], isLoading } = useQuery<SearchResult[]>({
     queryKey: ["/api/search", { q: query }],
+    queryFn: async () => {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error("Network response was not ok");
+      return res.json();
+    },
     enabled: query.length > 0,
   });
 
@@ -97,7 +102,7 @@ export default function Search() {
                 avatar: result.authorAvatar || undefined,
               },
               createdAt: result.createdAt,
-              verificationStatus: "verified" as const,
+
               likes: 0,
               comments: 0,
             };
