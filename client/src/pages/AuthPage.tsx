@@ -122,7 +122,7 @@ export default function AuthPage() {
                         <CardDescription>Hesabınıza erişmek için giriş yapın veya kayıt olun.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Tabs defaultValue="login" className="w-full">
+                        <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") === "register" ? "register" : "login"} className="w-full">
                             <TabsList className="grid w-full grid-cols-2 mb-8">
                                 <TabsTrigger value="login">Giriş Yap</TabsTrigger>
                                 <TabsTrigger value="register">Kayıt Ol</TabsTrigger>

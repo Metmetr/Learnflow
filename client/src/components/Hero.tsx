@@ -3,6 +3,7 @@ import { Search, Bot, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
 interface HeroProps {
   onTopicSelect?: (topic: string) => void;
@@ -12,6 +13,7 @@ export default function Hero({ onTopicSelect }: HeroProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
 
+  /*
   const topics = [
     "Matematik",
     "Fizik",
@@ -22,6 +24,15 @@ export default function Hero({ onTopicSelect }: HeroProps) {
     "Programlama",
     "Kişisel Gelişim",
   ];
+  */
+
+  const { data: fetchedTopics } = useQuery<{ topic: string; count: number }[]>({
+    queryKey: ["/api/content/topics"],
+  });
+
+  const topics = fetchedTopics && fetchedTopics.length > 0
+    ? fetchedTopics.slice(0, 8).map(t => t.topic)
+    : ["Matematik", "Fizik", "Tarih", "Biyoloji", "Teknoloji", "Sanat", "Edebiyat", "Müzik"];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,9 +69,9 @@ export default function Hero({ onTopicSelect }: HeroProps) {
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight" data-testid="heading-hero">
             Jarvis ile Kişisel Eğitim İçerikleri
           </h1>
-          
+
           <p className="text-lg md:text-xl text-white/90 leading-relaxed max-w-2xl mx-auto">
-            Yapay zeka destekli öğrenme deneyimi. Matematik, fizik, tarih ve daha fazlasında 
+            Yapay zeka destekli öğrenme deneyimi. Matematik, fizik, tarih ve daha fazlasında
             size özel eğitim içerikleri.
           </p>
 

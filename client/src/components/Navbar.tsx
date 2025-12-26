@@ -136,9 +136,14 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
               </DropdownMenu>
             </>
           ) : (
-            <Button asChild data-testid="button-login">
-              <Link href="/auth">Giriş Yap</Link>
-            </Button>
+            <>
+              <Button asChild variant="ghost" data-testid="button-register">
+                <Link href="/auth?tab=register">Kayıt Ol</Link>
+              </Button>
+              <Button asChild data-testid="button-login">
+                <Link href="/auth">Giriş Yap</Link>
+              </Button>
+            </>
           )}
         </div>
       </div>
