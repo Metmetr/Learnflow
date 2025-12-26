@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ interface Comment {
   };
   content: string;
   createdAt: string;
+  parentId?: string | null;
   replies?: Comment[];
 }
 
@@ -29,13 +30,13 @@ interface CommentSectionProps {
   contentId: string;
 }
 
-function CommentItem({ 
-  comment, 
-  currentUserId, 
+function CommentItem({
+  comment,
+  currentUserId,
   contentId,
-  depth = 0 
-}: { 
-  comment: Comment; 
+  depth = 0
+}: {
+  comment: Comment;
   currentUserId?: string;
   contentId: string;
   depth?: number;
@@ -172,8 +173,8 @@ function CommentItem({
                 data-testid={`textarea-reply-${comment.id}`}
               />
               <div className="flex flex-col gap-2">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={handleReply}
                   disabled={replyMutation.isPending || !replyText.trim()}
                   data-testid={`button-submit-reply-${comment.id}`}
@@ -207,14 +208,42 @@ function CommentItem({
   );
 }
 
+
 export default function CommentSection({ contentId }: CommentSectionProps) {
   const [newComment, setNewComment] = useState("");
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const { data: comments = [], isLoading } = useQuery<Comment[]>({
+  const { data: rawComments = [], isLoading } = useQuery<Comment[]>({
     queryKey: ['/api/social/comments', contentId],
   });
+
+  // Reconstruct tree from flat list on the client side
+  const { rootComments, totalCount } = React.useMemo(() => {
+    const commentMap = new Map<string, Comment>();
+    const roots: Comment[] = [];
+
+    // 1. Initialize map with fresh objects (to avoid mutation issues)
+    rawComments.forEach(c => {
+      commentMap.set(c.id, { ...c, replies: [] });
+    });
+
+    // 2. Link children to parents
+    rawComments.forEach(c => {
+      const comment = commentMap.get(c.id)!;
+      if (c.parentId && commentMap.has(c.parentId)) {
+        const parent = commentMap.get(c.parentId)!;
+        parent.replies!.push(comment);
+      } else {
+        roots.push(comment);
+      }
+    });
+
+    // 3. Sort roots by newness (reversed)
+    roots.reverse();
+
+    return { rootComments: roots, totalCount: rawComments.length };
+  }, [rawComments]);
 
   const commentMutation = useMutation({
     mutationFn: (text: string) => socialAPI.createComment(contentId, text),
@@ -269,7 +298,7 @@ export default function CommentSection({ contentId }: CommentSectionProps) {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Yorumlar ({comments.length})</h3>
+      <h3 className="text-lg font-semibold">Yorumlar ({totalCount})</h3>
 
       <div className="flex gap-3">
         <Avatar className="h-8 w-8">
@@ -291,7 +320,7 @@ export default function CommentSection({ contentId }: CommentSectionProps) {
             disabled={!user}
             data-testid="textarea-new-comment"
           />
-          <Button 
+          <Button
             onClick={handleSubmit}
             disabled={commentMutation.isPending || !newComment.trim() || !user}
             data-testid="button-submit-comment"
@@ -301,16 +330,16 @@ export default function CommentSection({ contentId }: CommentSectionProps) {
         </div>
       </div>
 
-      {comments.length === 0 ? (
+      {rootComments.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
           Henüz yorum yok. İlk yorumu siz yazın!
         </p>
       ) : (
         <div className="divide-y">
-          {comments.map((comment) => (
-            <CommentItem 
-              key={comment.id} 
-              comment={comment} 
+          {rootComments.map((comment) => (
+            <CommentItem
+              key={comment.id}
+              comment={comment}
               currentUserId={(user as any)?.id}
               contentId={contentId}
             />

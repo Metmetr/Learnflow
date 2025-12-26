@@ -13,6 +13,7 @@ import { socialAPI } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { getYouTubeVideoId } from "@/lib/utils";
 
 export interface Post {
   id: string;
@@ -172,7 +173,7 @@ export default function PostCard({ post }: PostCardProps) {
               )}
             </Avatar>
           </Link>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <Link href={post.author.isBot ? "/jarvis" : `/profile/${post.author.id}`}>
@@ -207,17 +208,46 @@ export default function PostCard({ post }: PostCardProps) {
             {post.title}
           </h3>
         </Link>
-        
-        {post.mediaUrl && (
-          <Link href={`/content/${post.id}`}>
-            <img
-              src={post.mediaUrl}
-              alt={post.title}
-              className="w-full aspect-video object-cover rounded-md cursor-pointer"
-              data-testid={`img-media-${post.id}`}
-            />
-          </Link>
-        )}
+
+
+        {(() => {
+          const videoId = getYouTubeVideoId(post.mediaUrl);
+
+          if (videoId) {
+            return (
+              <Link href={`/content/${post.id}`}>
+                <div className="relative w-full aspect-video rounded-md overflow-hidden cursor-pointer group">
+                  <img
+                    src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+                    alt={post.title}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    data-testid={`img-media-${post.id}`}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                      <div className="w-0 h-0 border-t-[8px] border-t-transparent border-l-[14px] border-l-black border-b-[8px] border-b-transparent ml-1" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          }
+
+          if (post.mediaUrl) {
+            return (
+              <Link href={`/content/${post.id}`}>
+                <img
+                  src={post.mediaUrl}
+                  alt={post.title}
+                  className="w-full aspect-video object-cover rounded-md cursor-pointer"
+                  data-testid={`img-media-${post.id}`}
+                />
+              </Link>
+            );
+          }
+
+          return null;
+        })()}
 
         <p className="text-sm text-muted-foreground line-clamp-3" data-testid={`text-excerpt-${post.id}`}>
           {post.excerpt}

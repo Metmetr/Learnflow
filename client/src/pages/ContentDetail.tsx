@@ -13,7 +13,10 @@ import { socialAPI } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { getYouTubeVideoId } from "@/lib/utils";
 import { tr } from "date-fns/locale";
+// Helper for YouTube ID (imported or logic within component scope if import fails linting, but preferably imported)
+// Since I added it to utils, I will use logic here to decide what to render.
 
 interface ContentData {
   id: string;
@@ -43,7 +46,7 @@ export default function ContentDetail() {
   const contentId = params.id;
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const { data: content, isLoading, error } = useQuery<ContentData>({
     queryKey: ['/api/content', contentId],
     enabled: !!contentId,
@@ -122,6 +125,22 @@ export default function ContentDetail() {
     bookmarkMutation.mutate();
   };
 
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Bağlantı kopyalandı",
+        description: "İçerik bağlantısı panoya kopyalandı.",
+      });
+    } catch (err) {
+      toast({
+        title: "Hata",
+        description: "Bağlantı kopyalanamadı.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -156,6 +175,7 @@ export default function ContentDetail() {
 
   const isBot = content.author.isBot;
   const authorProfileLink = isBot ? "/jarvis" : `/profile/${content.author.id}`;
+  const videoId = getYouTubeVideoId(content.mediaUrl);
 
   return (
     <div className="min-h-screen bg-background">
@@ -190,7 +210,7 @@ export default function ContentDetail() {
               >
                 <Bookmark className={`h-5 w-5 ${bookmarked ? "fill-current" : ""}`} />
               </Button>
-              <Button variant="ghost" size="icon" data-testid="button-share">
+              <Button variant="ghost" size="icon" onClick={handleShare} data-testid="button-share">
                 <Share2 className="h-5 w-5" />
               </Button>
             </div>
@@ -255,7 +275,15 @@ export default function ContentDetail() {
             )}
           </div>
 
-          {content.mediaUrl && (
+          {videoId ? (
+            <iframe
+              className="w-full aspect-video rounded-lg"
+              src={`https://www.youtube.com/embed/${videoId}`}
+              title={content.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : content.mediaUrl && (
             <img
               src={content.mediaUrl}
               alt={content.title}
@@ -290,7 +318,7 @@ export default function ContentDetail() {
               </span>
             </div>
 
-            <Button variant="outline" data-testid="button-share-bottom">
+            <Button variant="outline" onClick={handleShare} data-testid="button-share-bottom">
               <Share2 className="mr-2 h-4 w-4" />
               Paylaş
             </Button>

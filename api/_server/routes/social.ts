@@ -158,50 +158,27 @@ router.get("/comments/:contentId", async (req, res: Response) => {
     const { contentId } = req.params;
 
     const allComments = await db
-      .select({
-        id: comments.id,
-        contentId: comments.contentId,
-        body: comments.body,
-        createdAt: comments.createdAt,
-        parentId: comments.parentId,
-        authorId: users.id,
-        authorName: users.name,
-        authorAvatar: users.avatar,
-      })
+      .select()
       .from(comments)
-      .innerJoin(users, eq(comments.authorId, users.id))
+      .leftJoin(users, eq(comments.authorId, users.id)) // Changed to leftJoin to debug
       .where(eq(comments.contentId, contentId))
-      .orderBy(desc(comments.createdAt));
+      .orderBy(comments.createdAt); // Keep chronological sort
 
-    // Organize into nested structure
-    const commentMap = new Map();
-    const topLevel: any[] = [];
+    // Return flat list (Frontend will handle tree construction)
+    const formattedComments = allComments.map(c => ({
+      id: c.comments.id, // Adjusted for join result structure
+      author: {
+        id: c.users?.id || "unknown",
+        name: c.users?.name || "Unknown User",
+        avatar: c.users?.avatar,
+      },
+      content: c.comments.body,
+      createdAt: c.comments.createdAt,
+      parentId: c.comments.parentId,
+      replies: [],
+    }));
 
-    allComments.forEach((comment) => {
-      const formatted = {
-        id: comment.id,
-        author: {
-          id: comment.authorId,
-          name: comment.authorName,
-          avatar: comment.authorAvatar,
-        },
-        content: comment.body,
-        createdAt: comment.createdAt,
-        replies: [],
-      };
-      commentMap.set(comment.id, formatted);
-
-      if (comment.parentId) {
-        const parent = commentMap.get(comment.parentId);
-        if (parent) {
-          parent.replies.push(formatted);
-        }
-      } else {
-        topLevel.push(formatted);
-      }
-    });
-
-    res.json(topLevel);
+    res.json(formattedComments);
   } catch (error) {
     console.error("Get comments error:", error);
     res.status(500).json({ error: "Internal server error" });
