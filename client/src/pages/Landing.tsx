@@ -125,12 +125,7 @@ export default function Landing() {
                   Hemen Başla
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="bg-background/50 backdrop-blur hover:bg-background/80" asChild data-testid="button-explore">
-                <Link href="/jarvis">
-                  <Bot className="mr-2 h-5 w-5" />
-                  Örnekleri İncele
-                </Link>
-              </Button>
+
             </div>
           </div>
         </section>
