@@ -137,14 +137,17 @@ export default function Landing() {
               Öğrenme deneyimini kişiselleştir.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-              <Button size="lg" asChild data-testid="button-start-learning">
+              <Button size="lg" className="shadow-lg hover:shadow-xl transition-all" asChild data-testid="button-start-learning">
                 <Link href="/auth">
                   <Sparkles className="mr-2 h-5 w-5" />
                   Hemen Başla
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild data-testid="button-explore">
-                <Link href="/jarvis">Jarvis'i Tanı</Link>
+              <Button size="lg" variant="outline" className="bg-background/50 backdrop-blur hover:bg-background/80" asChild data-testid="button-explore">
+                <Link href="/jarvis">
+                  <Bot className="mr-2 h-5 w-5" />
+                  Örnekleri İncele
+                </Link>
               </Button>
             </div>
           </div>

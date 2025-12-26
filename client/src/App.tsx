@@ -16,6 +16,7 @@ import Likes from "@/pages/Likes";
 import JarvisProfile from "@/pages/JarvisProfile";
 import Search from "@/pages/Search";
 import NotFound from "@/pages/not-found";
+import { About, Contact, Privacy, Terms } from "@/pages/StaticPages";
 
 function Router() {
   return (
@@ -32,6 +33,10 @@ function Router() {
       <Route path="/bookmarks" component={Bookmarks} />
       <Route path="/likes" component={Likes} />
       <Route path="/jarvis" component={JarvisProfile} />
+      <Route path="/about" component={About} />
+      <Route path="/contact" component={Contact} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
       <Route component={NotFound} />
     </Switch>
   );
