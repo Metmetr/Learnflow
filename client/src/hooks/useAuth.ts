@@ -74,7 +74,7 @@ export function useAuth() {
         title: "Çıkış Yapıldı",
         description: "Görüşmek üzere!",
       });
-      setLocation("/auth");
+      setLocation("/");
     },
     onError: (error: Error) => {
       toast({
