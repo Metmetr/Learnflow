@@ -218,8 +218,27 @@ export const notifications = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
-    userIdx: index("notifications_user_idx").on(table.userId),
     readIdx: index("notifications_read_idx").on(table.read),
+  })
+);
+
+export const commentLikes = pgTable(
+  "comment_likes",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    commentId: varchar("comment_id")
+      .notNull()
+      .references(() => comments.id, { onDelete: "cascade" }),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    commentUserIdx: index("comment_likes_comment_user_idx").on(
+      table.commentId,
+      table.userId
+    ),
   })
 );
 
@@ -275,6 +294,11 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+export const insertCommentLikeSchema = createInsertSchema(commentLikes).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Select Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -305,3 +329,6 @@ export type Consent = typeof consents.$inferSelect;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type CommentLike = typeof commentLikes.$inferSelect;
+export type InsertCommentLike = z.infer<typeof insertCommentLikeSchema>;

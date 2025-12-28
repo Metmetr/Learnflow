@@ -6,11 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
-import { Trash2, Bot, Loader2 } from "lucide-react";
+import { Trash2, Bot, Loader2, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { socialAPI } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface Comment {
   id: string;
@@ -24,6 +25,8 @@ interface Comment {
   createdAt: string;
   parentId?: string | null;
   replies?: Comment[];
+  likeCount: number;
+  isLiked: boolean;
 }
 
 interface CommentSectionProps {
@@ -83,6 +86,58 @@ function CommentItem({
     },
   });
 
+  const likeMutation = useMutation({
+    mutationFn: () => {
+      if (comment.isLiked) {
+        return socialAPI.unlikeComment(comment.id);
+      } else {
+        return socialAPI.likeComment(comment.id);
+      }
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['/api/social/comments', contentId] });
+      const previousComments = queryClient.getQueryData(['/api/social/comments', contentId]);
+
+      queryClient.setQueryData(['/api/social/comments', contentId], (old: Comment[] | undefined) => {
+        if (!old) return [];
+        return old.map(c => {
+          if (c.id === comment.id) {
+            return {
+              ...c,
+              isLiked: !c.isLiked,
+              likeCount: c.isLiked ? c.likeCount - 1 : c.likeCount + 1
+            };
+          }
+          return c;
+        });
+      });
+
+      return { previousComments };
+    },
+    onError: (err, newTodo, context) => {
+      queryClient.setQueryData(['/api/social/comments', contentId], context?.previousComments);
+      toast({
+        title: "Hata",
+        description: "İşlem gerçekleştirilemedi.",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/social/comments', contentId] });
+    }
+  });
+
+  const handleLike = () => {
+    if (!user) {
+      toast({
+        title: "Giriş yapın",
+        description: "Beğenmek için giriş yapmanız gerekiyor.",
+      });
+      return;
+    }
+    likeMutation.mutate();
+  };
+
   const handleReply = () => {
     if (!user) {
       toast({
@@ -134,7 +189,18 @@ function CommentItem({
           </p>
 
           <div className="flex items-center gap-2">
-            {depth < 1 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn("h-7 px-2 text-xs gap-1", comment.isLiked && "text-red-500 hover:text-red-600")}
+              onClick={handleLike}
+              disabled={likeMutation.isPending}
+            >
+              <Heart className={cn("h-3 w-3", comment.isLiked && "fill-current")} />
+              <span>{comment.likeCount > 0 ? comment.likeCount : ""}</span>
+            </Button>
+
+            {depth < 3 && ( // Allow up to 3 levels of nesting (0, 1, 2)
               <Button
                 variant="ghost"
                 size="sm"

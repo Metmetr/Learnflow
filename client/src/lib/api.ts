@@ -100,6 +100,16 @@ export const socialAPI = {
       method: "POST",
       body: JSON.stringify({ contentId, reason }),
     }),
+
+  likeComment: (commentId: string) =>
+    apiRequest(`/social/comments/${commentId}/likes`, {
+      method: "POST",
+    }),
+
+  unlikeComment: (commentId: string) =>
+    apiRequest(`/social/comments/${commentId}/likes`, {
+      method: "DELETE",
+    }),
 };
 
 // Feed API
@@ -116,9 +126,9 @@ export const feedAPI = {
 // Admin API
 export const adminAPI = {
   getStats: () => apiRequest<any>("/admin/stats"),
-  
+
   getPendingContent: () => apiRequest<any[]>("/admin/moderation/pending"),
-  
+
   approveContent: (id: string) =>
     apiRequest(`/admin/moderation/approve/${id}`, {
       method: "POST",

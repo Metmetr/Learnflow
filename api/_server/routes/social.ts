@@ -1,13 +1,14 @@
 import { Router, type Response } from "express";
 import { db } from "../db";
-import { likes, bookmarks, comments, reports, users, notifications, content } from "../../../shared/schema";
+import { likes, bookmarks, comments, reports, users, notifications, content, commentLikes } from "../../../shared/schema";
 import { eq, and, desc, sql, isNull } from "drizzle-orm";
-import { isAuthenticated as authenticateToken, type AuthRequest } from "../auth";
+import { isAuthenticated as authenticateToken, optionalAuth, type AuthRequest } from "../auth";
 import {
   insertLikeSchema,
   insertBookmarkSchema,
   insertCommentSchema,
   insertReportSchema,
+  insertCommentLikeSchema,
 } from "../../../shared/schema";
 import { z } from "zod";
 
@@ -153,28 +154,39 @@ router.delete("/bookmarks/:contentId", authenticateToken, async (req: AuthReques
 });
 
 // Get comments for content
-router.get("/comments/:contentId", async (req, res: Response) => {
+router.get("/comments/:contentId", optionalAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { contentId } = req.params;
 
     const allComments = await db
-      .select()
+      .select({
+        comment: comments,
+        user: users,
+        likeCount: sql<number>`count(distinct ${commentLikes.id})::int`,
+        isLiked: req.user
+          ? sql<boolean>`sum(case when ${commentLikes.userId} = ${req.user.id} then 1 else 0 end) > 0`
+          : sql<boolean>`false`,
+      })
       .from(comments)
-      .leftJoin(users, eq(comments.authorId, users.id)) // Changed to leftJoin to debug
+      .leftJoin(users, eq(comments.authorId, users.id))
+      .leftJoin(commentLikes, eq(comments.id, commentLikes.commentId))
       .where(eq(comments.contentId, contentId))
-      .orderBy(comments.createdAt); // Keep chronological sort
+      .groupBy(comments.id, users.id)
+      .orderBy(comments.createdAt);
 
     // Return flat list (Frontend will handle tree construction)
-    const formattedComments = allComments.map(c => ({
-      id: c.comments.id, // Adjusted for join result structure
+    const formattedComments = allComments.map(({ comment, user, likeCount, isLiked }) => ({
+      id: comment.id,
       author: {
-        id: c.users?.id || "unknown",
-        name: c.users?.name || "Unknown User",
-        avatar: c.users?.avatar,
+        id: user?.id || "unknown",
+        name: user?.name || "Unknown User",
+        avatar: user?.avatar,
       },
-      content: c.comments.body,
-      createdAt: c.comments.createdAt,
-      parentId: c.comments.parentId,
+      content: comment.body,
+      createdAt: comment.createdAt,
+      parentId: comment.parentId,
+      likeCount: likeCount || 0,
+      isLiked: !!isLiked,
       replies: [],
     }));
 
@@ -259,6 +271,88 @@ router.post("/comments", authenticateToken, async (req: AuthRequest, res: Respon
       return res.status(400).json({ error: error.errors });
     }
     console.error("Create comment error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+// Like comment
+router.post("/comments/:id/likes", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id: commentId } = req.params;
+    const userId = req.user!.id;
+
+    // Check if already liked
+    const [existing] = await db
+      .select()
+      .from(commentLikes)
+      .where(
+        and(
+          eq(commentLikes.commentId, commentId),
+          eq(commentLikes.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (existing) {
+      return res.status(400).json({ error: "Already liked" });
+    }
+
+    const [newLike] = await db
+      .insert(commentLikes)
+      .values({ commentId, userId })
+      .returning();
+
+    // Create notification for comment author
+    const [commentData] = await db
+      .select({ authorId: comments.authorId, contentId: comments.contentId })
+      .from(comments)
+      .where(eq(comments.id, commentId))
+      .limit(1);
+
+    if (commentData && commentData.authorId !== userId) {
+      const [liker] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      await db.insert(notifications).values({
+        userId: commentData.authorId,
+        type: "like_added", // Using existing type for simplicity
+        title: "Yorumunuz beğenildi",
+        message: `${liker?.name || "Bir kullanıcı"} yorumunuzu beğendi.`,
+        contentId: commentData.contentId,
+        commentId: commentId,
+        read: false,
+      });
+    }
+
+    res.status(201).json(newLike);
+  } catch (error) {
+    console.error("Like comment error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Unlike comment
+router.delete("/comments/:id/likes", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id: commentId } = req.params;
+    const userId = req.user!.id;
+
+    await db
+      .delete(commentLikes)
+      .where(
+        and(
+          eq(commentLikes.commentId, commentId),
+          eq(commentLikes.userId, userId)
+        )
+      );
+
+    res.json({ message: "Like removed" });
+  } catch (error) {
+    console.error("Unlike comment error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
