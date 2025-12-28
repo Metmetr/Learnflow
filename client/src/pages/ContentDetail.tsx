@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Heart, Bookmark, Share2, Bot, Loader2 } from "lucide-react";
+import { ArrowLeft, Heart, Bookmark, Share2, Bot, Loader2, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import CommentSection from "@/components/CommentSection";
+import ReportDialog from "@/components/ReportDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { socialAPI } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
@@ -55,6 +56,7 @@ export default function ContentDetail() {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     if (content) {
@@ -179,6 +181,11 @@ export default function ContentDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <ReportDialog
+        contentId={contentId!}
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+      />
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -212,6 +219,14 @@ export default function ContentDetail() {
               </Button>
               <Button variant="ghost" size="icon" onClick={handleShare} data-testid="button-share">
                 <Share2 className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => setReportOpen(true)}
+              >
+                <Flag className="h-5 w-5" />
               </Button>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { createApp } from "./_server/app";
+import reportsRouter from "./_server/routes/reports";
 
 // Cache the app instance
 let appPromise: Promise<{ app: any; server: any }> | null = null;
@@ -23,9 +24,9 @@ export default async function handler(req: any, res: any) {
                     <h1>CRITICAL STARTUP ERROR</h1>
                     <h2>The server failed to start.</h2>
                     <hr>
-                    <h3>Error:</h3>
+                    <h3>Error: </h3>
                     <pre>${errorMessage}</pre>
-                    <h3>Stack:</h3>
+                    <h3>Stack: </h3>
                     <pre>${errorStack}</pre>
                 </body>
             </html>

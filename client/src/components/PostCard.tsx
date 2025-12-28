@@ -1,7 +1,14 @@
 import { Link } from "wouter";
-import { Heart, MessageCircle, Share2, Bookmark, Bot } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Bot, MoreVertical, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ReportDialog from "@/components/ReportDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { getTopicIcon } from "@/lib/topicIcons";
@@ -44,6 +51,7 @@ export default function PostCard({ post }: PostCardProps) {
   const [liked, setLiked] = useState(post.isLiked ?? false);
   const [bookmarked, setBookmarked] = useState(post.isBookmarked ?? false);
   const [likeCount, setLikeCount] = useState(post.likes);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const TopicIcon = getTopicIcon(post.topics[0]);
 
@@ -157,6 +165,12 @@ export default function PostCard({ post }: PostCardProps) {
         </div>
       )}
 
+      <ReportDialog
+        contentId={post.id}
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+      />
+
       <CardHeader className="gap-3 space-y-0 pb-3">
         <div className="flex items-start gap-3">
           <Link href={post.author.isBot ? "/jarvis" : `/profile/${post.author.id}`}>
@@ -201,6 +215,20 @@ export default function PostCard({ post }: PostCardProps) {
               ))}
             </div>
           </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setReportOpen(true)} className="text-destructive">
+                <Flag className="mr-2 h-4 w-4" />
+                Raporla
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
 
