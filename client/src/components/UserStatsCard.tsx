@@ -1,16 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
-import { User, FileText, Heart, MessageSquare, Loader2 } from "lucide-react";
+import { User, Bookmark, Heart, MessageSquare, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 interface UserStats {
-    totalContent: number;
-    verifiedContent: number;
-    totalLikes: number;
-    totalComments: number;
+    totalBookmarks: number;
+    totalLikedPosts: number;
+    totalCommentsMade: number;
 }
 
 export default function UserStatsCard() {
@@ -31,7 +30,7 @@ export default function UserStatsCard() {
                     <div className="space-y-1">
                         <h3 className="font-semibold text-lg">Hoş Geldiniz!</h3>
                         <p className="text-sm text-muted-foreground">
-                            İçerik üretmek ve etkileşime girmek için giriş yapın.
+                            Okumak, öğrenmek ve etkileşime girmek için giriş yapın.
                         </p>
                     </div>
                     <Link href="/auth">
@@ -70,19 +69,19 @@ export default function UserStatsCard() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50">
-                            <FileText className="h-4 w-4 mb-1 text-blue-500" />
-                            <span className="text-sm font-bold">{stats?.totalContent || 0}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">İçerik</span>
+                        <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50 transition-colors hover:bg-muted">
+                            <Bookmark className="h-4 w-4 mb-1 text-blue-500" />
+                            <span className="text-sm font-bold">{stats?.totalBookmarks || 0}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Kaydedilen</span>
                         </div>
-                        <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50">
+                        <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50 transition-colors hover:bg-muted">
                             <Heart className="h-4 w-4 mb-1 text-red-500" />
-                            <span className="text-sm font-bold">{stats?.totalLikes || 0}</span>
+                            <span className="text-sm font-bold">{stats?.totalLikedPosts || 0}</span>
                             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Beğeni</span>
                         </div>
-                        <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50">
+                        <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50 transition-colors hover:bg-muted">
                             <MessageSquare className="h-4 w-4 mb-1 text-green-500" />
-                            <span className="text-sm font-bold">{stats?.totalComments || 0}</span>
+                            <span className="text-sm font-bold">{stats?.totalCommentsMade || 0}</span>
                             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Yorum</span>
                         </div>
                     </div>

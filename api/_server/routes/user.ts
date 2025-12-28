@@ -87,41 +87,31 @@ router.get("/stats", authenticateToken, async (req: AuthRequest, res: Response) 
   try {
     const userId = req.user!.id;
 
-    const totalContentResult = await db.execute<{ totalContent: number }>(sql`
-      SELECT COUNT(*)::int as "totalContent"
-      FROM content
+    // 1. Total Bookmarks (Saved Posts)
+    const totalBookmarksResult = await db.execute<{ totalBookmarks: number }>(sql`
+      SELECT COUNT(*)::int as "totalBookmarks"
+      FROM bookmarks
+      WHERE user_id = ${userId}
+    `);
+
+    // 2. Total Liked Posts
+    const totalLikedPostsResult = await db.execute<{ totalLikedPosts: number }>(sql`
+      SELECT COUNT(*)::int as "totalLikedPosts"
+      FROM likes
+      WHERE user_id = ${userId}
+    `);
+
+    // 3. Total Comments Made
+    const totalCommentsMadeResult = await db.execute<{ totalCommentsMade: number }>(sql`
+      SELECT COUNT(*)::int as "totalCommentsMade"
+      FROM comments
       WHERE author_id = ${userId}
     `);
 
-    const verifiedContentResult = await db.execute<{ verifiedContent: number }>(sql`
-      SELECT COUNT(*)::int as "verifiedContent"
-      FROM content
-      WHERE author_id = ${userId} AND verification_status = 'verified'
-    `);
-
-    const totalLikesResult = await db.execute<{ totalLikes: number }>(sql`
-      SELECT COALESCE(SUM(like_count), 0)::int as "totalLikes"
-      FROM (
-        SELECT COUNT(*) as like_count
-        FROM likes l
-        INNER JOIN content c ON l.content_id = c.id
-        WHERE c.author_id = ${userId}
-        GROUP BY l.content_id
-      ) counts
-    `);
-
-    const totalCommentsResult = await db.execute<{ totalComments: number }>(sql`
-      SELECT COALESCE(COUNT(*), 0)::int as "totalComments"
-      FROM comments co
-      INNER JOIN content c ON co.content_id = c.id
-      WHERE c.author_id = ${userId}
-    `);
-
     res.json({
-      totalContent: totalContentResult.rows[0]?.totalContent || 0,
-      verifiedContent: verifiedContentResult.rows[0]?.verifiedContent || 0,
-      totalLikes: totalLikesResult.rows[0]?.totalLikes || 0,
-      totalComments: totalCommentsResult.rows[0]?.totalComments || 0,
+      totalBookmarks: totalBookmarksResult.rows[0]?.totalBookmarks || 0,
+      totalLikedPosts: totalLikedPostsResult.rows[0]?.totalLikedPosts || 0,
+      totalCommentsMade: totalCommentsMadeResult.rows[0]?.totalCommentsMade || 0,
     });
   } catch (error) {
     console.error("Error fetching user stats:", error);
