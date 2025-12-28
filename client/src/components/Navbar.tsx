@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import NotificationsPopover from "@/components/NotificationsPopover";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -76,6 +77,7 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
         <div className="ml-auto flex items-center gap-2">
           {user ? (
             <>
+              <ThemeToggle />
               <NotificationsPopover unreadCount={notificationCount} />
 
               <DropdownMenu>

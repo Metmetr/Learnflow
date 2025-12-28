@@ -43,7 +43,7 @@ export default function Landing() {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background">
       <Navbar showSearch={false} />
 
       <main className="container max-w-7xl mx-auto px-4 py-8 space-y-12">
