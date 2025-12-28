@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { Home, Compass, Bookmark, Bot, Heart, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import TrendingSidebar from "@/components/TrendingSidebar";
+import UserStatsCard from "@/components/UserStatsCard";
 
 export default function Feed() {
   const [location, setLocation] = useLocation();
@@ -69,6 +71,7 @@ export default function Feed() {
       <div className="container max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <aside className="hidden lg:block lg:col-span-3">
+            <UserStatsCard />
             <Card className="sticky top-20">
               <CardContent className="p-4 space-y-2">
                 {navItems.map((item) => (
@@ -180,6 +183,9 @@ export default function Feed() {
                 </Link>
               </CardContent>
             </Card>
+            <div className="mt-6">
+              <TrendingSidebar />
+            </div>
           </aside>
         </div>
       </div>
