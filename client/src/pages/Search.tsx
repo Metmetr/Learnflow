@@ -16,6 +16,10 @@ interface SearchResult {
   authorName: string;
   authorAvatar: string | null;
   authorVerified: boolean;
+  source: string;
+  author?: {
+    isBot: boolean;
+  };
 }
 
 export default function Search() {
@@ -101,6 +105,7 @@ export default function Search() {
                 id: result.authorId,
                 name: result.authorName,
                 avatar: result.authorAvatar || undefined,
+                isBot: result.author?.isBot || result.source === "jarvis" || result.source === "n8n",
               },
               createdAt: result.createdAt,
 
