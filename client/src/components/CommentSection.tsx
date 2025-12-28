@@ -49,8 +49,8 @@ function CommentItem({
 
   const replyMutation = useMutation({
     mutationFn: (text: string) => socialAPI.createComment(contentId, text, comment.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/social/comments', contentId] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/social/comments', contentId] });
       setReplyText("");
       setShowReply(false);
       toast({
@@ -247,9 +247,9 @@ export default function CommentSection({ contentId }: CommentSectionProps) {
 
   const commentMutation = useMutation({
     mutationFn: (text: string) => socialAPI.createComment(contentId, text),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/social/comments', contentId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/content', contentId] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/social/comments', contentId] });
+      await queryClient.refetchQueries({ queryKey: ['/api/social/comments', contentId] });
       setNewComment("");
       toast({
         title: "Yorum gönderildi",
