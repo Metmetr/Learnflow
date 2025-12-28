@@ -11,6 +11,12 @@ const router = Router();
 const updateProfileSchema = z.object({
   specialty: z.string().max(100).nullable().optional(),
   bio: z.string().max(500).nullable().optional(),
+  location: z.string().max(100).nullable().optional(),
+  education: z.string().max(100).nullable().optional(),
+  website: z.string().max(255).nullable().optional(),
+  githubHandle: z.string().max(100).nullable().optional(),
+  twitterHandle: z.string().max(100).nullable().optional(),
+  linkedinHandle: z.string().max(100).nullable().optional(),
 });
 
 router.put("/profile", authenticateToken, async (req: AuthRequest, res: Response) => {

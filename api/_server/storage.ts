@@ -7,7 +7,16 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
-  updateUserProfile(id: string, updates: { specialty?: string | null; bio?: string | null }): Promise<User>;
+  updateUserProfile(id: string, updates: {
+    specialty?: string | null;
+    bio?: string | null;
+    location?: string | null;
+    education?: string | null;
+    website?: string | null;
+    githubHandle?: string | null;
+    twitterHandle?: string | null;
+    linkedinHandle?: string | null;
+  }): Promise<User>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -41,7 +50,16 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserProfile(id: string, updates: { specialty?: string | null; bio?: string | null }): Promise<User> {
+  async updateUserProfile(id: string, updates: {
+    specialty?: string | null;
+    bio?: string | null;
+    location?: string | null;
+    education?: string | null;
+    website?: string | null;
+    githubHandle?: string | null;
+    twitterHandle?: string | null;
+    linkedinHandle?: string | null;
+  }): Promise<User> {
     const [user] = await db
       .update(users)
       .set({
