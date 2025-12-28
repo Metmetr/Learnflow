@@ -75,9 +75,9 @@ export default function Navbar({ onMenuClick, showSearch = true }: NavbarProps) 
         )}
 
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
           {user ? (
             <>
-              <ThemeToggle />
               <NotificationsPopover unreadCount={notificationCount} />
 
               <DropdownMenu>
