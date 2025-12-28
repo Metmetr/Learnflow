@@ -11,6 +11,7 @@ import jarvisRoutes from "./routes/jarvis";
 import userRoutes from "./routes/user";
 import notificationsRoutes from "./routes/notifications";
 import searchRoutes from "./routes/search";
+import reportsRoutes from "./routes/reports";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -23,6 +24,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/user", userRoutes);
   app.use("/api/notifications", notificationsRoutes);
   app.use("/api/search", searchRoutes);
+  app.use("/api/reports", reportsRoutes);
 
   // Health check endpoint to verify DB connection
   app.get("/api/health", async (req, res) => {

@@ -1,5 +1,4 @@
 import { createApp } from "./_server/app";
-import reportsRouter from "./_server/routes/reports";
 
 // Cache the app instance
 let appPromise: Promise<{ app: any; server: any }> | null = null;
