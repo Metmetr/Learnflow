@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { getYouTubeVideoId } from "@/lib/utils";
 import { tr } from "date-fns/locale";
+import { getCategoryImage } from "@/lib/categoryImages";
 // Helper for YouTube ID (imported or logic within component scope if import fails linting, but preferably imported)
 // Since I added it to utils, I will use logic here to decide what to render.
 
@@ -298,9 +299,9 @@ export default function ContentDetail() {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
-          ) : content.mediaUrl && (
+          ) : (
             <img
-              src={content.mediaUrl}
+              src={content.mediaUrl || getCategoryImage(content.topics)}
               alt={content.title}
               className="w-full aspect-video object-cover rounded-lg"
               data-testid="img-article-hero"

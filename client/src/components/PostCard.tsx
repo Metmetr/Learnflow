@@ -21,6 +21,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { getYouTubeVideoId } from "@/lib/utils";
+import { getCategoryImage } from "@/lib/categoryImages";
 
 export interface Post {
   id: string;
@@ -263,11 +264,14 @@ export default function PostCard({ post }: PostCardProps) {
             );
           }
 
-          if (post.mediaUrl) {
+          // Video değilse resim kontrolü (Varsa orijinal, yoksa kategori resmi)
+          const imageUrl = post.mediaUrl || getCategoryImage(post.topics);
+
+          if (imageUrl) {
             return (
               <Link href={`/content/${post.id}`}>
                 <img
-                  src={post.mediaUrl}
+                  src={imageUrl}
                   alt={post.title}
                   className="w-full aspect-video object-cover rounded-md cursor-pointer"
                   data-testid={`img-media-${post.id}`}
