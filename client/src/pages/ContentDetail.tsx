@@ -304,6 +304,7 @@ export default function ContentDetail() {
               alt={content.title}
               className="w-full aspect-video object-cover rounded-lg"
               data-testid="img-article-hero"
+              referrerPolicy="no-referrer"
             />
           )}
 
