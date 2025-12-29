@@ -271,6 +271,7 @@ export default function PostCard({ post }: PostCardProps) {
                   alt={post.title}
                   className="w-full aspect-video object-cover rounded-md cursor-pointer"
                   data-testid={`img-media-${post.id}`}
+                  referrerPolicy="no-referrer"
                 />
               </Link>
             );
