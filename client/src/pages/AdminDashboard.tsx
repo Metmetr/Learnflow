@@ -305,15 +305,31 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell>
                           {report.status === "pending" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => resolveReportMutation.mutate(report.id)}
-                              disabled={resolveReportMutation.isPending}
-                              data-testid={`button-resolve-${report.id}`}
-                            >
-                              Çöz
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => resolveReportMutation.mutate(report.id)}
+                                disabled={resolveReportMutation.isPending}
+                                data-testid={`button-resolve-${report.id}`}
+                              >
+                                Çöz
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  if (confirm("Bu içeriği silmek istediğinize emin misiniz?")) {
+                                    deleteContentMutation.mutate(report.contentId);
+                                    resolveReportMutation.mutate(report.id); // Mark report as resolved too
+                                  }
+                                }}
+                                disabled={deleteContentMutation.isPending}
+                                data-testid={`button-delete-report-${report.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
